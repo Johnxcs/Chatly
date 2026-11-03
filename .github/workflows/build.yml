@@ -48,9 +48,25 @@ jobs:
           printf 'SUPABASE_URL = "%s"\nSUPABASE_ANON_KEY = "%s"\n' "$SUPABASE_URL" "$SUPABASE_ANON_KEY" > config.py
 
       - name: Build debug APK
-        run: buildozer -v android debug
+        shell: bash
+        run: |
+          set -o pipefail
+          buildozer -v android debug 2>&1 | tee build.log
 
-      - uses: actions/upload-artifact@v4
+      - name: Show errors
+        if: failure()
+        run: grep -n -i -E "error|failed|exception|not found|no such" build.log | head -60
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+          if-no-files-found: ignore
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
           name: chatly-apk
           path: bin/*.apk
