@@ -1,7 +1,7 @@
 [app]
 title = Chatly
 package.name = chatly
-package.domain = ph.aibalac.chatly
+package.domain = org.chatly
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,json
 source.exclude_dirs = supabase,.github,.buildozer,bin
@@ -12,6 +12,8 @@ fullscreen = 0
 android.permissions = INTERNET
 android.api = 33
 android.minapi = 24
+android.ndk = 25b
+android.ndk_api = 24
 android.archs = arm64-v8a
 android.accept_sdk_license = True
 android.allow_backup = True

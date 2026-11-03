@@ -37,8 +37,7 @@ jobs:
           path: |
             ~/.buildozer
             .buildozer
-          key: buildozer-${{ hashFiles('buildozer.spec') }}
-          restore-keys: buildozer-
+          key: buildozer-ndk25b-${{ hashFiles('buildozer.spec') }}
 
       - name: Write Supabase config
         env:
@@ -55,7 +54,7 @@ jobs:
 
       - name: Show errors
         if: failure()
-        run: grep -n -i -E "error|failed|exception|not found|no such" build.log | head -60
+        run: sed 's/\x1b\[[0-9;]*m//g' build.log | grep -E 'error:|Command failed|Traceback|BUILD FAILED|FAILURE' | cut -c1-200 | head -40
 
       - name: Upload build log
         if: always()
