@@ -172,7 +172,11 @@ class Supa:
     def _req(self, method, path, auth=True, headers=None, **kw):
         if auth:
             self.ensure()
-        h = {"apikey": self.key, "Authorization": f"Bearer {self.access if auth else self.key}"}
+        h = {"apikey": self.key}
+        if auth:
+            h["Authorization"] = f"Bearer {self.access}"
+        elif not self.key.startswith("sb_"):
+            h["Authorization"] = f"Bearer {self.key}"  # legacy anon key is a JWT
         h.update(headers or {})
         r = requests.request(method, self.base + path, headers=h, timeout=15,
                              verify=certifi.where(), **kw)

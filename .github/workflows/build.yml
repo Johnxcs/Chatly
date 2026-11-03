@@ -46,6 +46,22 @@ jobs:
         run: |
           printf 'SUPABASE_URL = "%s"\nSUPABASE_ANON_KEY = "%s"\n' "$SUPABASE_URL" "$SUPABASE_ANON_KEY" > config.py
 
+      - name: Allow Gradle to use Maven Central
+        run: |
+          mkdir -p ~/.gradle/init.d
+          cat > ~/.gradle/init.d/maven-central.gradle <<'EOF'
+          allprojects {
+              buildscript {
+                  repositories {
+                      mavenCentral()
+                  }
+              }
+              repositories {
+                  mavenCentral()
+              }
+          }
+          EOF
+
       - name: Build debug APK
         shell: bash
         run: |
