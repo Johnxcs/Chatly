@@ -1,0 +1,5 @@
+# Replace with your Supabase project values (Project Settings -> API).
+# The anon key is public by design; security comes from the RLS policies in supabase/schema.sql.
+# The GitHub workflow overwrites this file from repository secrets at build time.
+SUPABASE_URL = "https://dyksgxufwvgquzeaksvo.supabase.co"
+SUPABASE_ANON_KEY = "YOUR-ANON-KEY"
