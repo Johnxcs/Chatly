@@ -37,7 +37,7 @@ jobs:
           path: |
             ~/.buildozer
             .buildozer
-          key: buildozer-ndk25b-${{ hashFiles('buildozer.spec') }}
+          key: buildozer-p4a2024-ndk25b-${{ hashFiles('buildozer.spec') }}
 
       - name: Write Supabase config
         env:
