@@ -5,6 +5,7 @@ import time
 
 import certifi
 import requests
+from kivy.base import ExceptionHandler, ExceptionManager
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.lang import Builder
@@ -13,7 +14,10 @@ from kivy.storage.jsonstore import JsonStore
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.list import IconLeftWidget, TwoLineAvatarIconListItem
-from kivymd.uix.snackbar import Snackbar
+from kivy.uix.label import Label
+from kivy.uix.popup import Popup
+from kivymd.uix.button import MDFlatButton
+from kivymd.uix.dialog import MDDialog
 
 import config
 
@@ -308,6 +312,26 @@ class LocalDB:
                 pass
 
 
+class CrashCatcher(ExceptionHandler):
+    """Keeps the app alive on unexpected errors, logs them, and shows the message."""
+
+    def handle_exception(self, inst):
+        import traceback
+        tb = "".join(traceback.format_exception(type(inst), inst, inst.__traceback__))
+        try:
+            app = MDApp.get_running_app()
+            with open(os.path.join(app.user_data_dir, "crash.log"), "a") as f:
+                f.write(time.ctime() + "\n" + tb + "\n")
+            last = tb.strip().splitlines()[-1]
+            Clock.schedule_once(lambda dt: app.notify("Unexpected error: " + last))
+        except Exception:
+            pass
+        return ExceptionManager.PASS
+
+
+ExceptionManager.add_handler(CrashCatcher())
+
+
 class Bubble(MDBoxLayout):
     text = StringProperty("")
     mine = BooleanProperty(False)
@@ -343,6 +367,20 @@ class ChatApp(MDApp):
             self.bg(self.api.ensure, lambda _: self.enter_app(), self.restore_failed)
 
     # ---------- helpers ----------
+    def notify(self, text):
+        text = str(text)[:400]
+        try:
+            old = getattr(self, "_dialog", None)
+            if old:
+                old.dismiss()
+            self._dialog = MDDialog(
+                title="Chatly", text=text,
+                buttons=[MDFlatButton(text="OK", on_release=lambda x: self._dialog.dismiss())])
+            self._dialog.open()
+        except Exception:
+            Popup(title="Chatly", content=Label(text=text, text_size=(Window.width * .7, None)),
+                  size_hint=(.85, .4)).open()
+
     def bg(self, fn, ok=None, err=None):
         def run():
             try:
@@ -357,24 +395,29 @@ class ChatApp(MDApp):
 
     def show_err(self, e):
         self.loading = False
-        Snackbar(text=str(e)[:140]).open()
+        self.notify(str(e)[:140])
 
     def toggle_mode(self):
         self.signup_mode = not self.signup_mode
 
     # ---------- auth ----------
     def submit(self):
+        url, key = config.SUPABASE_URL, config.SUPABASE_ANON_KEY
+        if not url.startswith("https://") or "YOUR-" in url or not key or "YOUR-" in key:
+            self.notify("Supabase is not configured in this build. Add the SUPABASE_URL and "
+                        "SUPABASE_ANON_KEY secrets on GitHub, then rebuild the app.")
+            return
         ids = self.root.ids
         email, pw = ids.email_field.text.strip(), ids.pass_field.text
         if "@" not in email or len(pw) < 6:
-            Snackbar(text="Enter a valid email and a password of 6+ characters").open()
+            self.notify("Enter a valid email and a password of 6+ characters")
             return
         self.loading = True
         if self.signup_mode:
             name = ids.username_field.text.strip()
             if not 3 <= len(name) <= 24:
                 self.loading = False
-                Snackbar(text="Username must be 3-24 characters").open()
+                self.notify("Username must be 3-24 characters")
                 return
             self.bg(lambda: self.api.sign_up(email, pw, name), self.signed_up, self.auth_fail)
         else:
@@ -386,14 +429,14 @@ class ChatApp(MDApp):
         else:
             self.loading = False
             self.signup_mode = False
-            Snackbar(text="Account created. Confirm your email, then sign in.").open()
+            self.notify("Account created. Confirm your email, then sign in.")
 
     def auth_fail(self, e):
         self.loading = False
         msg = str(e)
         if "database error" in msg.lower():
             msg = "That username is already taken"
-        Snackbar(text=msg[:140]).open()
+        self.notify(msg[:140])
 
     def restore_failed(self, e):
         self.loading = False
