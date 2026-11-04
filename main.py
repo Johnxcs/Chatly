@@ -65,6 +65,91 @@ KV = """
             radius: [self.width / 2]
             elevation: 0
             md_bg_color: GREEN
+    MDCard:
+        size_hint: None, None
+        size: pill.texture_size[0] + dp(12), dp(20)
+        pos_hint: {"right": 1.04, "y": -0.04}
+        radius: [dp(10)]
+        elevation: 0
+        md_bg_color: (0.08, 0.09, 0.12, .9)
+        opacity: 1 if root.badge else 0
+        padding: dp(6), 0
+        Label:
+            id: pill
+            text: root.badge
+            font_size: "11sp"
+            bold: True
+            color: WHITE
+            size_hint: None, None
+            size: self.texture_size
+            pos_hint: {"center_y": .5}
+    MDCard:
+        size_hint: None, None
+        size: root.width * .42, root.width * .42
+        pos_hint: {"right": 1.02, "y": -0.02}
+        radius: [self.width / 2]
+        elevation: 0
+        md_bg_color: (0.16, 0.18, 0.24, 1)
+        opacity: 1 if root.plus else 0
+        MDIcon:
+            icon: "plus"
+            size_hint: 1, 1
+            text_size: self.size
+            halign: "center"
+            valign: "middle"
+            font_size: "16sp"
+            theme_text_color: "Custom"
+            text_color: WHITE
+
+<StoryItem>:
+    orientation: "vertical"
+    size_hint: None, None
+    size: dp(86), dp(124)
+    padding: dp(4), 0
+    spacing: dp(3)
+    Label:
+        id: nmeas
+        text: root.note
+        font_size: "11sp"
+        size_hint: None, None
+        size: 0, 0
+        opacity: 0
+    MDCard:
+        size_hint: None, None
+        size: min(nmeas.texture_size[0] + dp(18), dp(78)), dp(26)
+        pos_hint: {"center_x": .5}
+        radius: [dp(13)]
+        elevation: 0
+        md_bg_color: (0.93, 0.94, 0.97, 1)
+        opacity: 1 if root.note else 0
+        padding: dp(8), 0
+        Label:
+            text: root.note
+            font_size: "11sp"
+            color: MUTED if root.placeholder else INK
+            halign: "center"
+            valign: "middle"
+            shorten: True
+            max_lines: 1
+            text_size: self.size
+    AvatarDot:
+        size: dp(60), dp(60)
+        pos_hint: {"center_x": .5}
+        initial: root.initial
+        color: root.color
+        online: root.online
+        badge: root.badge
+        plus: root.plus
+    Label:
+        text: root.name
+        font_size: "12sp"
+        color: INK
+        size_hint_y: None
+        height: dp(18)
+        halign: "center"
+        shorten: True
+        max_lines: 1
+        text_size: self.width, None
 
 <Bubble>:
     orientation: "horizontal"
@@ -328,6 +413,19 @@ MDScreenManager:
                         padding: [0, dp(12), 0, dp(12)]
                         on_text: app.refresh_contacts()
             ScrollView:
+                id: rail_sv
+                size_hint_y: None
+                height: dp(126)
+                bar_width: 0
+                do_scroll_y: False
+                MDBoxLayout:
+                    id: rail
+                    orientation: "horizontal"
+                    adaptive_width: True
+                    size_hint_y: None
+                    height: dp(126)
+                    padding: dp(10), 0
+            ScrollView:
                 bar_width: 0
                 MDBoxLayout:
                     id: contact_list
@@ -390,6 +488,10 @@ MDScreenManager:
                     MDTextField:
                         id: name_field
                         hint_text: "Display name"
+                        mode: "rectangle"
+                    MDTextField:
+                        id: note_field
+                        hint_text: "Note for friends (24 hours)"
                         mode: "rectangle"
                     MDRaisedButton:
                         text: "Save"
@@ -577,6 +679,22 @@ def presence_text(sec):
     return f"Active {h}h ago" if h < 24 else f"Active {h // 24}d ago"
 
 
+def short(text, n):
+    text = " ".join((text or "").split())
+    return text if len(text) <= n else text[:n - 1].rstrip() + "..."
+
+
+def badge_text(sec):
+    """'10m' / '3h' pill for friends who were recently active (empty when online or unknown)."""
+    if sec is None or sec < 70:
+        return ""
+    m = int(sec // 60)
+    if m < 60:
+        return f"{m}m"
+    h = m // 60
+    return f"{h}h" if h < 24 else ""
+
+
 class Supa:
     """Minimal Supabase client (Auth + PostgREST) using plain HTTPS requests."""
 
@@ -649,13 +767,19 @@ class Supa:
         try:
             rows = self._req("POST", "/rest/v1/rpc/get_people", json={})
             return [{"id": r["id"], "username": r["username"], "display_name": r.get("display_name"),
-                     "seconds_ago": r.get("seconds_ago")} for r in rows]
+                     "seconds_ago": r.get("seconds_ago"), "note": r.get("note")} for r in rows]
         except RuntimeError:
             rows = self._req("GET", "/rest/v1/profiles", params={"select": "id,username", "order": "username"})
-            return [{"id": r["id"], "username": r["username"], "display_name": None, "seconds_ago": None}
-                    for r in rows if r["id"] != self.uid]
+            return [{"id": r["id"], "username": r["username"], "display_name": None, "seconds_ago": None,
+                     "note": None} for r in rows if r["id"] != self.uid]
 
     def me(self):
+        try:
+            rows = self._req("POST", "/rest/v1/rpc/get_me", json={})
+            if rows:
+                return rows[0]
+        except RuntimeError:
+            pass  # supabase/update_v3.sql not run yet
         for cols in ("id,username,display_name,show_active", "id,username"):
             try:
                 rows = self._req("GET", "/rest/v1/profiles", params={"select": cols, "id": f"eq.{self.uid}"})
@@ -672,6 +796,9 @@ class Supa:
     def set_show_active(self, flag):
         self._req("PATCH", "/rest/v1/profiles", params={"id": f"eq.{self.uid}"},
                   json={"show_active": bool(flag)}, headers={"Prefer": "return=minimal"})
+
+    def set_note(self, text):
+        self._req("POST", "/rest/v1/rpc/set_note", json={"p_note": text})
 
     def touch(self):
         self._req("POST", "/rest/v1/rpc/touch_presence", json={})
@@ -812,6 +939,20 @@ class AvatarDot(MDFloatLayout):
     initial = StringProperty("?")
     color = ListProperty([0, 0.52, 1, 1])
     online = BooleanProperty(False)
+    badge = StringProperty("")
+    plus = BooleanProperty(False)
+
+
+class StoryItem(ButtonBehavior, MDBoxLayout):
+    """One avatar in the top 'active friends' rail."""
+    name = StringProperty("")
+    initial = StringProperty("?")
+    color = ListProperty([0, 0.52, 1, 1])
+    note = StringProperty("")
+    placeholder = BooleanProperty(False)
+    online = BooleanProperty(False)
+    badge = StringProperty("")
+    plus = BooleanProperty(False)
 
 
 class ContactRow(ButtonBehavior, MDBoxLayout):
@@ -907,7 +1048,8 @@ class ChatApp(MDApp):
         self.me_color = avatar_color(self.me_username)
 
     def users_key(self, users):
-        return [(u["id"], name_of(u), is_online(u.get("seconds_ago"))) for u in users]
+        return [(u["id"], name_of(u), is_online(u.get("seconds_ago")), u.get("note"),
+                 badge_text(u.get("seconds_ago"))) for u in users]
 
     def user_by_id(self, uid):
         return next((u for u in self.users if u["id"] == uid), None)
@@ -1119,6 +1261,33 @@ class ChatApp(MDApp):
             lst.add_widget(MDLabel(
                 text="No matches" if q else "No one else has joined yet.\nInvite a friend to create an account!",
                 halign="center", theme_text_color="Hint", size_hint_y=None, height=dp(140)))
+        sv = self.root.ids.rail_sv
+        sv.height, sv.opacity = (0, 0) if q else (dp(126), 1)  # hide the rail while searching
+        if not q:
+            self.refresh_rail()
+
+    def refresh_rail(self):
+        """Top strip: your note, then friends who are online / recently active or have a note."""
+        rail = self.root.ids.rail
+        rail.clear_widgets()
+        mine = self.me.get("note") or ""
+        rail.add_widget(StoryItem(
+            name="Your note", initial=self.me_initial, color=self.me_color,
+            note=short(mine, 14) if mine else "What's up?", placeholder=not mine, plus=True,
+            on_release=lambda x: self.open_profile(True)))
+        people = []
+        for u in self.users:
+            sec = u.get("seconds_ago")
+            if is_online(sec) or u.get("note") or (sec is not None and sec < 86400):
+                people.append(u)
+        people.sort(key=lambda u: (u.get("seconds_ago") is None, u.get("seconds_ago") or 0))
+        for u in people[:20]:
+            sec, full = u.get("seconds_ago"), name_of(u)
+            rail.add_widget(StoryItem(
+                name=short(full.split()[0], 10), initial=initial(full),
+                color=avatar_color(u["username"]), note=short(u.get("note") or "", 14),
+                online=is_online(sec), badge=badge_text(sec),
+                on_release=lambda x, uid=u["id"], n=full: self.open_chat(uid, n)))
 
     # ---------- chat ----------
     def open_chat(self, uid, name):
@@ -1166,32 +1335,46 @@ class ChatApp(MDApp):
         self.refresh_contacts()
 
     # ---------- profile ----------
-    def open_profile(self):
+    def open_profile(self, focus_note=False):
         ids = self.root.ids
         self._profile_loading = True
         ids.name_field.text = self.me.get("display_name") or ""
+        ids.note_field.text = self.me.get("note") or ""
         ids.active_switch.active = self.me.get("show_active") is not False
         self._profile_loading = False
         self.root.current = "profile"
+        if focus_note:
+            Clock.schedule_once(lambda dt: setattr(ids.note_field, "focus", True), 0.4)
 
     def close_profile(self):
         self.root.current = "contacts"
         self.refresh_contacts()
 
     def save_profile(self):
-        name = self.root.ids.name_field.text.strip()
+        ids = self.root.ids
+        name, note = ids.name_field.text.strip(), ids.note_field.text.strip()
         if len(name) > 40:
             self.notify("Display name can be up to 40 characters")
             return
+        if len(note) > 60:
+            self.notify("Notes can be up to 60 characters")
+            return
+        old_note = self.me.get("note") or ""
         self.loading = True
+
+        def work():
+            self.api.set_display_name(name)
+            if note != old_note:
+                self.api.set_note(note)  # needs supabase/update_v3.sql
 
         def done(_):
             self.loading = False
             self.me["display_name"] = name or None
+            self.me["note"] = note or None
             self.set_me(self.me)
             self.close_profile()
 
-        self.bg(lambda: self.api.set_display_name(name), done)
+        self.bg(work, done)
 
     def set_show_active(self, flag):
         if self._profile_loading or not self.api.uid:

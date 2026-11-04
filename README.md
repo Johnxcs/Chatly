@@ -19,3 +19,7 @@ For local testing, edit `config.py` and run `python main.py`.
 ## Updating an existing Supabase project (display names + active status)
 Run `supabase/update_v2.sql` once in the Supabase SQL Editor. New projects can run `supabase/schema.sql` instead.
 The app still works without this update, but display names and "Active now" stay off until it is run.
+
+## Notes + active friends strip
+Run `supabase/update_v3.sql` once (after update_v2.sql) to enable notes. Without it the strip still shows
+friends who are active, but notes are off.
