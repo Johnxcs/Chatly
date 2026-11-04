@@ -326,7 +326,12 @@ class CrashCatcher(ExceptionHandler):
             app = MDApp.get_running_app()
             with open(os.path.join(app.user_data_dir, "crash.log"), "a") as f:
                 f.write(time.ctime() + "\n" + tb + "\n")
-            last = tb.strip().splitlines()[-1]
+            where = ""
+            for fr in reversed(traceback.extract_tb(inst.__traceback__)):
+                if fr.filename.endswith("main.py"):
+                    where = f" (line {fr.lineno}, in {fr.name})"
+                    break
+            last = f"{type(inst).__name__}: {inst}{where}"
             Clock.schedule_once(lambda dt: app.notify("Unexpected error: " + last))
         except Exception:
             pass
@@ -469,7 +474,7 @@ class ChatApp(MDApp):
             self.users, self.last_id = res
             self.loading = False
             self.refresh_contacts()
-            self.root.ids.sm.current = "contacts"
+            self.root.current = "contacts"
 
         self.bg(init, done)
 
@@ -484,7 +489,7 @@ class ChatApp(MDApp):
         self.users, self.msgs, self.unread, self.seen = [], {}, {}, set()
         self.peer, self.last_id = None, 0
         self.root.ids.contact_list.clear_widgets()
-        self.root.ids.sm.current = "login"
+        self.root.current = "login"
 
     # ---------- polling for new messages ----------
     def poll(self, dt):
@@ -519,12 +524,12 @@ class ChatApp(MDApp):
                 self.seen.add(m["id"])
                 peer = m["sender"]
                 self.msgs.setdefault(peer, []).append(m)
-                if peer == self.peer and self.root.ids.sm.current == "chat":
+                if peer == self.peer and self.root.current == "chat":
                     self.add_bubble(m)
                 else:
                     self.unread[peer] = self.unread.get(peer, 0) + 1
                     changed = True
-            if changed and self.root.ids.sm.current == "contacts":
+            if changed and self.root.current == "contacts":
                 self.refresh_contacts()
 
         def fail(e):
@@ -554,7 +559,7 @@ class ChatApp(MDApp):
         self.peer = uid
         self.unread.pop(uid, None)
         self.root.ids.chat_bar.title = name
-        self.root.ids.sm.current = "chat"
+        self.root.current = "chat"
         cached = self.local.load_history(self.api.uid, uid) if self.local else []
         if cached:
             self.msgs[uid] = cached
@@ -579,7 +584,7 @@ class ChatApp(MDApp):
 
     def back(self):
         self.peer = None
-        self.root.ids.sm.current = "contacts"
+        self.root.current = "contacts"
         self.refresh_contacts()
 
     def rebuild_chat(self):
