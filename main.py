@@ -2,6 +2,7 @@ import os
 import sqlite3
 import threading
 import time
+from datetime import datetime
 
 import certifi
 import requests
@@ -9,11 +10,13 @@ from kivy.base import ExceptionHandler, ExceptionManager
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.lang import Builder
-from kivy.properties import BooleanProperty, StringProperty
+from kivy.metrics import dp
+from kivy.properties import BooleanProperty, ListProperty, NumericProperty, StringProperty
 from kivy.storage.jsonstore import JsonStore
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
-from kivymd.uix.list import IconLeftWidget, TwoLineAvatarIconListItem
+from kivymd.uix.label import MDLabel
+from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivymd.uix.button import MDFlatButton
@@ -22,140 +25,398 @@ from kivymd.uix.dialog import MDDialog
 import config
 
 KV = """
+#:set PRIMARY (0.0, 0.52, 1.0, 1)
+#:set BG (0.955, 0.965, 0.985, 1)
+#:set WHITE (1, 1, 1, 1)
+#:set INK (0.09, 0.10, 0.14, 1)
+#:set MUTED (0.45, 0.48, 0.56, 1)
+#:set LINE (0.92, 0.93, 0.95, 1)
+
 <Bubble>:
     orientation: "horizontal"
     adaptive_height: True
-    padding: dp(8), dp(3)
+    padding: dp(10), dp(2)
     Widget:
         size_hint_x: 1 if root.mine else None
         width: 0
     MDCard:
+        orientation: "vertical"
         size_hint: None, None
-        size: lbl.width + dp(28), lbl.height + dp(20)
-        radius: [18, 18, 4, 18] if root.mine else [18, 18, 18, 4]
-        padding: dp(14), dp(10)
+        width: max(lbl.width, tlbl.width) + dp(28)
+        height: lbl.height + tlbl.height + dp(20)
+        radius: [20, 20, 6, 20] if root.mine else [20, 20, 20, 6]
+        padding: dp(14), dp(8)
+        spacing: dp(2)
         elevation: 0
-        md_bg_color: app.theme_cls.primary_color if root.mine else (.91, .92, .94, 1)
+        md_bg_color: PRIMARY if root.mine else WHITE
         MDLabel:
             id: lbl
             text: root.text
             size_hint: None, None
-            text_size: min(root.width * .72, dp(300)), None
+            text_size: min(root.width * .74, dp(300)), None
             size: self.texture_size
             theme_text_color: "Custom"
-            text_color: (1, 1, 1, 1) if root.mine else (0.1, 0.1, 0.1, 1)
+            text_color: WHITE if root.mine else INK
+        MDLabel:
+            id: tlbl
+            text: root.time
+            size_hint: None, None
+            size: self.texture_size
+            font_style: "Caption"
+            theme_text_color: "Custom"
+            text_color: (1, 1, 1, .75) if root.mine else MUTED
+            pos_hint: {"right": 1}
     Widget:
         size_hint_x: None if root.mine else 1
         width: 0
 
+<ContactRow>:
+    orientation: "horizontal"
+    size_hint_y: None
+    height: dp(76)
+    padding: dp(18), dp(10)
+    spacing: dp(14)
+    md_bg_color: (0.94, 0.95, 0.98, 1) if self.state == "down" else WHITE
+    MDCard:
+        size_hint: None, None
+        size: dp(54), dp(54)
+        radius: [dp(27)]
+        elevation: 0
+        pos_hint: {"center_y": .5}
+        md_bg_color: root.avatar_color
+        MDLabel:
+            text: root.initial
+            text_size: self.size
+            halign: "center"
+            valign: "middle"
+            bold: True
+            font_style: "H6"
+            theme_text_color: "Custom"
+            text_color: WHITE
+    MDBoxLayout:
+        orientation: "vertical"
+        adaptive_height: True
+        spacing: dp(2)
+        pos_hint: {"center_y": .5}
+        MDLabel:
+            text: root.name
+            bold: True
+            font_style: "Subtitle1"
+            theme_text_color: "Custom"
+            text_color: INK
+            size_hint_y: None
+            text_size: self.width, None
+            height: self.texture_size[1]
+        MDLabel:
+            text: root.subtitle
+            bold: root.unread > 0
+            font_style: "Body2"
+            theme_text_color: "Custom"
+            text_color: INK if root.unread > 0 else MUTED
+            size_hint_y: None
+            text_size: self.width, None
+            height: self.texture_size[1]
+    MDCard:
+        size_hint: None, None
+        size: (dp(26), dp(26)) if root.unread > 0 else (0, 0)
+        opacity: 1 if root.unread > 0 else 0
+        radius: [dp(13)]
+        elevation: 0
+        pos_hint: {"center_y": .5}
+        md_bg_color: PRIMARY
+        MDLabel:
+            text: str(root.unread) if root.unread < 100 else "99+"
+            text_size: self.size
+            halign: "center"
+            valign: "middle"
+            bold: True
+            font_size: "12sp"
+            theme_text_color: "Custom"
+            text_color: WHITE
+
 MDScreenManager:
-    id: sm
 
     MDScreen:
         name: "login"
+        md_bg_color: PRIMARY
         MDBoxLayout:
             orientation: "vertical"
-            padding: dp(32)
-            spacing: dp(14)
-            Widget:
-            MDIcon:
-                icon: "message-text"
-                font_size: "72sp"
-                halign: "center"
-                theme_text_color: "Custom"
-                text_color: app.theme_cls.primary_color
-                size_hint_y: None
-                height: dp(80)
-            MDLabel:
-                text: "Chatly"
-                halign: "center"
-                font_style: "H4"
-                size_hint_y: None
-                height: dp(48)
             MDBoxLayout:
+                orientation: "vertical"
                 size_hint_y: None
-                height: dp(64) if app.signup_mode else 0
-                opacity: 1 if app.signup_mode else 0
-                disabled: not app.signup_mode
+                height: dp(210)
+                padding: dp(24), dp(34), dp(24), dp(10)
+                spacing: dp(8)
+                MDCard:
+                    size_hint: None, None
+                    size: dp(76), dp(76)
+                    radius: [dp(26)]
+                    elevation: 0
+                    md_bg_color: WHITE
+                    pos_hint: {"center_x": .5}
+                    MDIcon:
+                        icon: "message-text"
+                        font_size: "40sp"
+                        halign: "center"
+                        valign: "middle"
+                        text_size: self.size
+                        theme_text_color: "Custom"
+                        text_color: PRIMARY
+                MDLabel:
+                    text: "Chatly"
+                    halign: "center"
+                    font_style: "H5"
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: WHITE
+                    size_hint_y: None
+                    height: dp(36)
+                MDLabel:
+                    text: "Chat with friends, instantly"
+                    halign: "center"
+                    font_style: "Body2"
+                    theme_text_color: "Custom"
+                    text_color: (1, 1, 1, .85)
+                    size_hint_y: None
+                    height: dp(22)
+            MDCard:
+                orientation: "vertical"
+                radius: [dp(32), dp(32), 0, 0]
+                elevation: 0
+                md_bg_color: WHITE
+                padding: dp(24), dp(24), dp(24), dp(16)
+                spacing: dp(12)
+                MDLabel:
+                    text: "Create your account" if app.signup_mode else "Welcome back"
+                    font_style: "H5"
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: INK
+                    size_hint_y: None
+                    height: dp(40)
+                MDBoxLayout:
+                    size_hint_y: None
+                    height: dp(64) if app.signup_mode else 0
+                    opacity: 1 if app.signup_mode else 0
+                    disabled: not app.signup_mode
+                    MDTextField:
+                        id: username_field
+                        hint_text: "Username (3-24 characters)"
+                        mode: "rectangle"
                 MDTextField:
-                    id: username_field
-                    hint_text: "Username (3-24 characters)"
+                    id: email_field
+                    hint_text: "Email"
                     mode: "rectangle"
-            MDTextField:
-                id: email_field
-                hint_text: "Email"
-                mode: "rectangle"
-                input_type: "mail"
-            MDTextField:
-                id: pass_field
-                hint_text: "Password (min 6 characters)"
-                mode: "rectangle"
-                password: True
-                on_text_validate: app.submit()
-            MDRaisedButton:
-                text: "Create account" if app.signup_mode else "Sign in"
-                pos_hint: {"center_x": .5}
-                disabled: app.loading
-                on_release: app.submit()
-            MDFlatButton:
-                text: "Have an account? Sign in" if app.signup_mode else "New here? Create account"
-                pos_hint: {"center_x": .5}
-                on_release: app.toggle_mode()
-            Widget:
+                    input_type: "mail"
+                MDTextField:
+                    id: pass_field
+                    hint_text: "Password (min 6 characters)"
+                    mode: "rectangle"
+                    password: True
+                    on_text_validate: app.submit()
+                MDRaisedButton:
+                    text: "Please wait..." if app.loading else ("Create account" if app.signup_mode else "Sign in")
+                    size_hint: 1, None
+                    height: dp(52)
+                    font_size: "16sp"
+                    md_bg_color: PRIMARY
+                    disabled: app.loading
+                    on_release: app.submit()
+                MDFlatButton:
+                    text: "Have an account? Sign in" if app.signup_mode else "New here? Create account"
+                    pos_hint: {"center_x": .5}
+                    theme_text_color: "Custom"
+                    text_color: PRIMARY
+                    on_release: app.toggle_mode()
+                Widget:
 
     MDScreen:
         name: "contacts"
+        md_bg_color: WHITE
         MDBoxLayout:
             orientation: "vertical"
-            MDTopAppBar:
-                id: contacts_bar
-                title: "Chats"
-                right_action_items: [["logout", lambda x: app.logout()]]
             MDBoxLayout:
                 size_hint_y: None
-                height: dp(64)
-                padding: dp(12), dp(4)
-                MDTextField:
-                    id: search_field
-                    hint_text: "Search people"
-                    icon_left: "magnify"
-                    on_text: app.refresh_contacts()
+                height: dp(76)
+                padding: dp(22), dp(14), dp(8), dp(6)
+                MDBoxLayout:
+                    orientation: "vertical"
+                    adaptive_height: True
+                    pos_hint: {"center_y": .5}
+                    MDLabel:
+                        text: "Chats"
+                        font_style: "H5"
+                        bold: True
+                        theme_text_color: "Custom"
+                        text_color: INK
+                        size_hint_y: None
+                        height: dp(34)
+                    MDLabel:
+                        text: "Signed in as " + app.me_name
+                        font_style: "Caption"
+                        theme_text_color: "Custom"
+                        text_color: MUTED
+                        size_hint_y: None
+                        height: dp(18)
+                MDIconButton:
+                    icon: "logout"
+                    pos_hint: {"center_y": .5}
+                    theme_icon_color: "Custom"
+                    icon_color: MUTED
+                    on_release: app.logout()
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(60)
+                padding: dp(16), dp(6)
+                MDCard:
+                    radius: [dp(22)]
+                    elevation: 0
+                    md_bg_color: (0.94, 0.95, 0.97, 1)
+                    padding: dp(14), 0
+                    spacing: dp(8)
+                    MDIcon:
+                        icon: "magnify"
+                        size_hint: None, None
+                        size: dp(24), dp(24)
+                        pos_hint: {"center_y": .5}
+                        theme_text_color: "Custom"
+                        text_color: MUTED
+                    TextInput:
+                        id: search_field
+                        hint_text: "Search people"
+                        multiline: False
+                        background_color: 0, 0, 0, 0
+                        background_normal: ""
+                        background_active: ""
+                        foreground_color: INK
+                        hint_text_color: MUTED
+                        cursor_color: PRIMARY
+                        font_size: "16sp"
+                        padding: [0, dp(12), 0, dp(12)]
+                        on_text: app.refresh_contacts()
             ScrollView:
-                MDList:
+                bar_width: 0
+                MDBoxLayout:
                     id: contact_list
+                    orientation: "vertical"
+                    adaptive_height: True
 
     MDScreen:
         name: "chat"
+        md_bg_color: BG
         MDBoxLayout:
             orientation: "vertical"
-            MDTopAppBar:
-                id: chat_bar
-                title: ""
-                left_action_items: [["arrow-left", lambda x: app.back()]]
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(64)
+                md_bg_color: WHITE
+                padding: dp(4), dp(6), dp(12), dp(6)
+                spacing: dp(6)
+                MDIconButton:
+                    icon: "arrow-left"
+                    pos_hint: {"center_y": .5}
+                    theme_icon_color: "Custom"
+                    icon_color: INK
+                    on_release: app.back()
+                MDCard:
+                    size_hint: None, None
+                    size: dp(42), dp(42)
+                    radius: [dp(21)]
+                    elevation: 0
+                    pos_hint: {"center_y": .5}
+                    md_bg_color: app.peer_color
+                    MDLabel:
+                        text: app.peer_initial
+                        text_size: self.size
+                        halign: "center"
+                        valign: "middle"
+                        bold: True
+                        theme_text_color: "Custom"
+                        text_color: WHITE
+                MDLabel:
+                    text: app.peer_name
+                    font_style: "Subtitle1"
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: INK
+                    size_hint_y: None
+                    text_size: self.width, None
+                    height: self.texture_size[1]
+                    pos_hint: {"center_y": .5}
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(1)
+                md_bg_color: LINE
             ScrollView:
                 id: scroll
+                bar_width: 0
                 MDBoxLayout:
                     id: msg_list
                     orientation: "vertical"
                     adaptive_height: True
-                    padding: 0, dp(8)
-                    spacing: dp(2)
+                    padding: 0, dp(10)
+                    spacing: dp(4)
             MDBoxLayout:
                 size_hint_y: None
-                height: dp(64)
-                padding: dp(12), dp(4)
-                spacing: dp(8)
-                MDTextField:
-                    id: msg_field
-                    hint_text: "Message"
-                    mode: "round"
-                    on_text_validate: app.send()
-                MDIconButton:
-                    icon: "send"
-                    theme_icon_color: "Custom"
-                    icon_color: app.theme_cls.primary_color
-                    on_release: app.send()
+                height: dp(68)
+                padding: dp(12), dp(10)
+                spacing: dp(10)
+                MDCard:
+                    radius: [dp(24)]
+                    elevation: 0
+                    md_bg_color: WHITE
+                    padding: dp(18), 0
+                    TextInput:
+                        id: msg_field
+                        hint_text: "Message"
+                        multiline: False
+                        text_validate_unfocus: False
+                        background_color: 0, 0, 0, 0
+                        background_normal: ""
+                        background_active: ""
+                        foreground_color: INK
+                        hint_text_color: MUTED
+                        cursor_color: PRIMARY
+                        font_size: "16sp"
+                        padding: [0, dp(14), 0, dp(14)]
+                        on_text_validate: app.send()
+                MDCard:
+                    size_hint: None, None
+                    size: dp(48), dp(48)
+                    radius: [dp(24)]
+                    elevation: 0
+                    md_bg_color: PRIMARY
+                    MDIconButton:
+                        icon: "send"
+                        pos_hint: {"center_x": .5, "center_y": .5}
+                        theme_icon_color: "Custom"
+                        icon_color: WHITE
+                        on_release: app.send()
 """
+
+
+AVATAR_COLORS = [
+    (0.00, 0.52, 1.00, 1), (0.55, 0.36, 0.96, 1), (0.96, 0.36, 0.52, 1), (0.98, 0.58, 0.16, 1),
+    (0.13, 0.70, 0.56, 1), (0.20, 0.60, 0.86, 1), (0.86, 0.30, 0.70, 1), (0.40, 0.45, 0.90, 1),
+]
+
+
+def avatar_color(name):
+    return list(AVATAR_COLORS[sum(ord(c) for c in (name or "?")) % len(AVATAR_COLORS)])
+
+
+def initial(name):
+    return ((name or "?").strip()[:1] or "?").upper()
+
+
+def fmt_time(ts):
+    """'2026-11-04T08:11:06.12+00:00' -> local 'HH:MM' (empty string if unknown)."""
+    if not ts:
+        return ""
+    try:
+        return datetime.fromisoformat(str(ts).replace("Z", "+00:00")).astimezone().strftime("%H:%M")
+    except Exception:
+        return str(ts)[11:16]
 
 
 class Supa:
@@ -294,6 +555,13 @@ class LocalDB:
                 (me, peer, peer, me, limit)).fetchall()
         return [dict(r) for r in rows]
 
+    def last_message(self, me, peer):
+        with self.lock:
+            row = self.conn.execute(
+                "SELECT id, sender, text FROM messages WHERE (sender=? AND receiver=?) "
+                "OR (sender=? AND receiver=?) ORDER BY id DESC LIMIT 1", (me, peer, peer, me)).fetchone()
+        return dict(row) if row else None
+
     def get_meta(self, key):
         with self.lock:
             row = self.conn.execute("SELECT value FROM meta WHERE key=?", (key,)).fetchone()
@@ -343,12 +611,25 @@ ExceptionManager.add_handler(CrashCatcher())
 
 class Bubble(MDBoxLayout):
     text = StringProperty("")
+    time = StringProperty("")
     mine = BooleanProperty(False)
+
+
+class ContactRow(ButtonBehavior, MDBoxLayout):
+    name = StringProperty("")
+    subtitle = StringProperty("")
+    initial = StringProperty("?")
+    avatar_color = ListProperty([0, 0.52, 1, 1])
+    unread = NumericProperty(0)
 
 
 class ChatApp(MDApp):
     signup_mode = BooleanProperty(False)
     loading = BooleanProperty(False)
+    me_name = StringProperty("")
+    peer_name = StringProperty("")
+    peer_initial = StringProperty("")
+    peer_color = ListProperty([0, 0.52, 1, 1])
 
     def build(self):
         self.title = "Chatly"
@@ -453,7 +734,7 @@ class ChatApp(MDApp):
             self.store.delete("session")
 
     def enter_app(self):
-        self.root.ids.contacts_bar.title = f"Chats · {self.api.username}"
+        self.me_name = self.api.username
         self.root.ids.pass_field.text = ""
 
         self.local = LocalDB(os.path.join(self.user_data_dir, f"chat_{self.api.uid}.db"))
@@ -539,26 +820,39 @@ class ChatApp(MDApp):
 
     # ---------- contacts ----------
     def refresh_contacts(self):
+        if not self.root:
+            return
         q = self.root.ids.search_field.text.strip().lower()
         lst = self.root.ids.contact_list
         lst.clear_widgets()
+        rows = []
         for u in self.users:
             if q and q not in u["username"].lower():
                 continue
-            n = self.unread.get(u["id"], 0)
-            item = TwoLineAvatarIconListItem(
-                text=u["username"],
-                secondary_text=f"{n} new message{'s' if n != 1 else ''}" if n else "Tap to chat",
-                on_release=lambda x, uid=u["id"], name=u["username"]: self.open_chat(uid, name),
-            )
-            item.add_widget(IconLeftWidget(icon="account-circle"))
-            lst.add_widget(item)
+            last = self.local.last_message(self.api.uid, u["id"]) if self.local and self.api.uid else None
+            rows.append((last["id"] if last else 0, u, last))
+        rows.sort(key=lambda r: (-r[0], r[1]["username"].lower()))  # recent chats first
+        for _, u, last in rows:
+            if last:
+                text = " ".join(last["text"].split())
+                text = text if len(text) <= 38 else text[:36] + "..."
+                sub = ("You: " if last["sender"] == self.api.uid else "") + text
+            else:
+                sub = "Tap to start chatting"
+            lst.add_widget(ContactRow(
+                name=u["username"], subtitle=sub, initial=initial(u["username"]),
+                avatar_color=avatar_color(u["username"]), unread=self.unread.get(u["id"], 0),
+                on_release=lambda x, uid=u["id"], name=u["username"]: self.open_chat(uid, name)))
+        if not rows:
+            lst.add_widget(MDLabel(
+                text="No matches" if q else "No one else has joined yet.\nInvite a friend to create an account!",
+                halign="center", theme_text_color="Hint", size_hint_y=None, height=dp(140)))
 
     # ---------- chat ----------
     def open_chat(self, uid, name):
         self.peer = uid
         self.unread.pop(uid, None)
-        self.root.ids.chat_bar.title = name
+        self.peer_name, self.peer_initial, self.peer_color = name, initial(name), avatar_color(name)
         self.root.current = "chat"
         cached = self.local.load_history(self.api.uid, uid) if self.local else []
         if cached:
@@ -595,7 +889,8 @@ class ChatApp(MDApp):
         self.scroll_down()
 
     def add_bubble(self, m, scroll=True):
-        self.root.ids.msg_list.add_widget(Bubble(text=m["text"], mine=m["sender"] == self.api.uid))
+        self.root.ids.msg_list.add_widget(Bubble(
+            text=m["text"], mine=m["sender"] == self.api.uid, time=fmt_time(m.get("created_at"))))
         if scroll:
             self.scroll_down()
 
@@ -608,6 +903,7 @@ class ChatApp(MDApp):
         if not text or not peer:
             return
         field.text = ""
+        Clock.schedule_once(lambda dt: setattr(field, "focus", True), 0.05)
 
         local = self.local
 

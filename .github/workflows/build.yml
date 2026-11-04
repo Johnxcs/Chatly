@@ -31,13 +31,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install buildozer "cython<3" virtualenv
 
+      - name: Compute cache key
+        id: ck
+        run: echo "h=$(grep -E '^(requirements|p4a\.|android\.(ndk|api|minapi|archs))' buildozer.spec | sha1sum | cut -c1-12)" >> "$GITHUB_OUTPUT"
+
       - name: Cache Buildozer
         uses: actions/cache@v4
         with:
           path: |
             ~/.buildozer
             .buildozer
-          key: buildozer-p4a2024-ndk25b-${{ hashFiles('buildozer.spec') }}
+          key: buildozer-${{ steps.ck.outputs.h }}
 
       - name: Write Supabase config
         env:

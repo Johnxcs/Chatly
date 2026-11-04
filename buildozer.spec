@@ -8,6 +8,9 @@ source.exclude_dirs = supabase,.github,.buildozer,bin
 version = 0.1
 requirements = python3,kivy==2.3.0,kivymd==1.2.0,pillow,requests,urllib3,chardet,idna,certifi,openssl,sdl2_ttf==2.20.2
 orientation = portrait
+icon.filename = %(source.dir)s/icon.png
+presplash.filename = %(source.dir)s/presplash.png
+android.presplash_color = #0084FF
 fullscreen = 0
 android.permissions = INTERNET
 android.api = 33
