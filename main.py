@@ -39,6 +39,7 @@ KV = """
     size_hint: None, None
     MDCard:
         size_hint: 1, 1
+        pos_hint: {"x": 0, "y": 0}
         radius: [root.width / 2]
         elevation: 0
         md_bg_color: root.color
@@ -404,7 +405,7 @@ MDScreenManager:
                         radius: [dp(16)]
                         elevation: 0
                         md_bg_color: WHITE
-                        padding: dp(16), 0
+                        padding: dp(16), 0, dp(30), 0
                         MDBoxLayout:
                             orientation: "vertical"
                             adaptive_height: True
