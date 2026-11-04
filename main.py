@@ -1142,14 +1142,23 @@ class ChatApp(MDApp):
                 local.save_messages(rows)
             return rows
 
-        def done(rows):
-            if self.peer != uid:
-                return
-            self.msgs[uid] = rows
-            self.seen.update(m["id"] for m in rows)
-            self.rebuild_chat()
+        self.bg(fetch, lambda rows: self.apply_history(uid, rows))
 
-        self.bg(fetch, done)
+    def apply_history(self, uid, rows):
+        """Show server history; only touch the screen if something changed (no flicker or jump)."""
+        if self.peer != uid:
+            return
+        old_ids = [m["id"] for m in self.msgs.get(uid, [])]
+        new_ids = [m["id"] for m in rows]
+        self.msgs[uid] = rows
+        self.seen.update(new_ids)
+        if old_ids == new_ids:
+            return  # already showing exactly this
+        if new_ids[:len(old_ids)] == old_ids:
+            for m in rows[len(old_ids):]:  # only new messages: append them
+                self.add_bubble(m)
+        else:
+            self.rebuild_chat()
 
     def back(self):
         self.peer = None
@@ -1191,20 +1200,27 @@ class ChatApp(MDApp):
         self.bg(lambda: self.api.set_show_active(flag), None, self.show_err)
 
     def rebuild_chat(self):
-        box = self.root.ids.msg_list
+        sv, box = self.root.ids.scroll, self.root.ids.msg_list
+        sv.opacity = 0  # stay invisible until the list sits at the newest message
         box.clear_widgets()
+        sv.scroll_y = 0
         for m in self.msgs.get(self.peer, []):
             self.add_bubble(m, scroll=False)
-        self.scroll_down()
+        Clock.schedule_once(self._reveal_chat, 0.06)
+
+    def _reveal_chat(self, dt):
+        sv = self.root.ids.scroll
+        sv.scroll_y = 0
+        sv.opacity = 1
 
     def add_bubble(self, m, scroll=True):
         self.root.ids.msg_list.add_widget(Bubble(
             text=m["text"], mine=m["sender"] == self.api.uid, time=fmt_time(m.get("created_at"))))
-        if scroll:
+        if scroll and (m["sender"] == self.api.uid or self.root.ids.scroll.scroll_y < 0.25):
             self.scroll_down()
 
     def scroll_down(self):
-        Clock.schedule_once(lambda dt: setattr(self.root.ids.scroll, "scroll_y", 0), 0.1)
+        Clock.schedule_once(lambda dt: setattr(self.root.ids.scroll, "scroll_y", 0), 0)
 
     def send(self):
         field = self.root.ids.msg_field
