@@ -16,6 +16,7 @@ from kivy.properties import BooleanProperty, ListProperty, NumericProperty, Stri
 from kivy.storage.jsonstore import JsonStore
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.card import MDCard
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.label import MDLabel
 from kivy.uix.behaviors import ButtonBehavior
@@ -37,7 +38,7 @@ KV = """
 
 <AvatarDot>:
     size_hint: None, None
-    MDCard:
+    PassCard:
         size_hint: 1, 1
         pos_hint: {"x": 0, "y": 0}
         radius: [root.width / 2]
@@ -52,7 +53,7 @@ KV = """
             font_style: "H4" if root.width > dp(80) else ("H6" if root.width > dp(48) else "Subtitle1")
             theme_text_color: "Custom"
             text_color: WHITE
-    MDCard:
+    PassCard:
         size_hint: None, None
         size: root.width * .38, root.width * .38
         pos_hint: {"right": 1, "y": 0}
@@ -61,11 +62,11 @@ KV = """
         md_bg_color: WHITE
         padding: self.width * .16
         opacity: 1 if root.online else 0
-        MDCard:
+        PassCard:
             radius: [self.width / 2]
             elevation: 0
             md_bg_color: GREEN
-    MDCard:
+    PassCard:
         size_hint: None, None
         size: pill.texture_size[0] + dp(12), dp(20)
         pos_hint: {"right": 1.04, "y": -0.04}
@@ -83,7 +84,7 @@ KV = """
             size_hint: None, None
             size: self.texture_size
             pos_hint: {"center_y": .5}
-    MDCard:
+    PassCard:
         size_hint: None, None
         size: root.width * .42, root.width * .42
         pos_hint: {"right": 1.02, "y": -0.02}
@@ -114,7 +115,7 @@ KV = """
         size_hint: None, None
         size: 0, 0
         opacity: 0
-    MDCard:
+    PassCard:
         size_hint: None, None
         size: min(nmeas.texture_size[0] + dp(18), dp(78)), dp(26)
         pos_hint: {"center_x": .5}
@@ -232,7 +233,7 @@ KV = """
             size_hint_y: None
             text_size: self.width, None
             height: self.texture_size[1]
-    MDCard:
+    PassCard:
         size_hint: None, None
         size: (dp(26), dp(26)) if root.unread > 0 else (0, 0)
         opacity: 1 if root.unread > 0 else 0
@@ -932,6 +933,20 @@ class Bubble(MDBoxLayout):
     text = StringProperty("")
     time = StringProperty("")
     mine = BooleanProperty(False)
+
+
+class PassCard(MDCard):
+    """A card that ignores touches, so a tap on it reaches the tappable row that contains it.
+    (Plain MDCards are clickable themselves and would swallow the tap.)"""
+
+    def on_touch_down(self, touch):
+        return False
+
+    def on_touch_move(self, touch):
+        return False
+
+    def on_touch_up(self, touch):
+        return False
 
 
 class AvatarDot(MDFloatLayout):
