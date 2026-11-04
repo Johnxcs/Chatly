@@ -44,7 +44,12 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          printf 'SUPABASE_URL = "%s"\nSUPABASE_ANON_KEY = "%s"\n' "$SUPABASE_URL" "$SUPABASE_ANON_KEY" > config.py
+          if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_ANON_KEY" ]; then
+            printf 'SUPABASE_URL = "%s"\nSUPABASE_ANON_KEY = "%s"\n' "$SUPABASE_URL" "$SUPABASE_ANON_KEY" > config.py
+            echo "config.py written from GitHub secrets"
+          else
+            echo "GitHub secrets not set - keeping the config.py from the repo"
+          fi
 
       - name: Allow Gradle to use Maven Central
         run: |
