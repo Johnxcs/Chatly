@@ -1,4 +1,5 @@
 import os
+import re
 import sqlite3
 import threading
 import time
@@ -15,6 +16,7 @@ from kivy.properties import BooleanProperty, ListProperty, NumericProperty, Stri
 from kivy.storage.jsonstore import JsonStore
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.label import MDLabel
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.label import Label
@@ -31,11 +33,49 @@ KV = """
 #:set INK (0.09, 0.10, 0.14, 1)
 #:set MUTED (0.45, 0.48, 0.56, 1)
 #:set LINE (0.92, 0.93, 0.95, 1)
+#:set GREEN (0.15, 0.65, 0.35, 1)
+
+<AvatarDot>:
+    size_hint: None, None
+    MDCard:
+        size_hint: 1, 1
+        radius: [root.width / 2]
+        elevation: 0
+        md_bg_color: root.color
+        MDLabel:
+            text: root.initial
+            text_size: self.size
+            halign: "center"
+            valign: "middle"
+            bold: True
+            font_style: "H4" if root.width > dp(80) else ("H6" if root.width > dp(48) else "Subtitle1")
+            theme_text_color: "Custom"
+            text_color: WHITE
+    MDCard:
+        size_hint: None, None
+        size: root.width * .38, root.width * .38
+        pos_hint: {"right": 1, "y": 0}
+        radius: [self.width / 2]
+        elevation: 0
+        md_bg_color: WHITE
+        padding: self.width * .16
+        opacity: 1 if root.online else 0
+        MDCard:
+            radius: [self.width / 2]
+            elevation: 0
+            md_bg_color: GREEN
 
 <Bubble>:
     orientation: "horizontal"
     adaptive_height: True
     padding: dp(10), dp(2)
+    Label:
+        id: meas
+        text: root.text
+        font_size: "16sp"
+        size_hint: None, None
+        size: 0, 0
+        opacity: 0
     Widget:
         size_hint_x: 1 if root.mine else None
         width: 0
@@ -43,28 +83,28 @@ KV = """
         orientation: "vertical"
         size_hint: None, None
         width: max(lbl.width, tlbl.width) + dp(28)
-        height: lbl.height + tlbl.height + dp(20)
+        height: lbl.height + tlbl.height + dp(22)
         radius: [20, 20, 6, 20] if root.mine else [20, 20, 20, 6]
         padding: dp(14), dp(8)
         spacing: dp(2)
         elevation: 0
         md_bg_color: PRIMARY if root.mine else WHITE
-        MDLabel:
+        Label:
             id: lbl
             text: root.text
+            font_size: "16sp"
+            color: WHITE if root.mine else INK
+            halign: "left"
             size_hint: None, None
-            text_size: min(root.width * .74, dp(300)), None
+            text_size: min(meas.texture_size[0] + dp(4), root.width * .74, dp(300)), None
             size: self.texture_size
-            theme_text_color: "Custom"
-            text_color: WHITE if root.mine else INK
-        MDLabel:
+        Label:
             id: tlbl
             text: root.time
+            font_size: "11sp"
+            color: (1, 1, 1, .75) if root.mine else MUTED
             size_hint: None, None
             size: self.texture_size
-            font_style: "Caption"
-            theme_text_color: "Custom"
-            text_color: (1, 1, 1, .75) if root.mine else MUTED
             pos_hint: {"right": 1}
     Widget:
         size_hint_x: None if root.mine else 1
@@ -77,22 +117,12 @@ KV = """
     padding: dp(18), dp(10)
     spacing: dp(14)
     md_bg_color: (0.94, 0.95, 0.98, 1) if self.state == "down" else WHITE
-    MDCard:
-        size_hint: None, None
+    AvatarDot:
         size: dp(54), dp(54)
-        radius: [dp(27)]
-        elevation: 0
         pos_hint: {"center_y": .5}
-        md_bg_color: root.avatar_color
-        MDLabel:
-            text: root.initial
-            text_size: self.size
-            halign: "center"
-            valign: "middle"
-            bold: True
-            font_style: "H6"
-            theme_text_color: "Custom"
-            text_color: WHITE
+        initial: root.initial
+        color: root.avatar_color
+        online: root.online
     MDBoxLayout:
         orientation: "vertical"
         adaptive_height: True
@@ -145,23 +175,13 @@ MDScreenManager:
                 orientation: "vertical"
                 size_hint_y: None
                 height: dp(210)
-                padding: dp(24), dp(34), dp(24), dp(10)
+                padding: dp(24), dp(30), dp(24), dp(10)
                 spacing: dp(8)
-                MDCard:
+                Image:
+                    source: "logo.png"
                     size_hint: None, None
-                    size: dp(76), dp(76)
-                    radius: [dp(26)]
-                    elevation: 0
-                    md_bg_color: WHITE
+                    size: dp(84), dp(84)
                     pos_hint: {"center_x": .5}
-                    MDIcon:
-                        icon: "message-text"
-                        font_size: "40sp"
-                        halign: "center"
-                        valign: "middle"
-                        text_size: self.size
-                        theme_text_color: "Custom"
-                        text_color: PRIMARY
                 MDLabel:
                     text: "Chatly"
                     halign: "center"
@@ -184,51 +204,63 @@ MDScreenManager:
                 radius: [dp(32), dp(32), 0, 0]
                 elevation: 0
                 md_bg_color: WHITE
-                padding: dp(24), dp(24), dp(24), dp(16)
-                spacing: dp(12)
-                MDLabel:
-                    text: "Create your account" if app.signup_mode else "Welcome back"
-                    font_style: "H5"
-                    bold: True
-                    theme_text_color: "Custom"
-                    text_color: INK
-                    size_hint_y: None
-                    height: dp(40)
-                MDBoxLayout:
-                    size_hint_y: None
-                    height: dp(64) if app.signup_mode else 0
-                    opacity: 1 if app.signup_mode else 0
-                    disabled: not app.signup_mode
-                    MDTextField:
-                        id: username_field
-                        hint_text: "Username (3-24 characters)"
-                        mode: "rectangle"
-                MDTextField:
-                    id: email_field
-                    hint_text: "Email"
-                    mode: "rectangle"
-                    input_type: "mail"
-                MDTextField:
-                    id: pass_field
-                    hint_text: "Password (min 6 characters)"
-                    mode: "rectangle"
-                    password: True
-                    on_text_validate: app.submit()
-                MDRaisedButton:
-                    text: "Please wait..." if app.loading else ("Create account" if app.signup_mode else "Sign in")
-                    size_hint: 1, None
-                    height: dp(52)
-                    font_size: "16sp"
-                    md_bg_color: PRIMARY
-                    disabled: app.loading
-                    on_release: app.submit()
-                MDFlatButton:
-                    text: "Have an account? Sign in" if app.signup_mode else "New here? Create account"
-                    pos_hint: {"center_x": .5}
-                    theme_text_color: "Custom"
-                    text_color: PRIMARY
-                    on_release: app.toggle_mode()
-                Widget:
+                padding: dp(24), dp(24), dp(24), 0
+                ScrollView:
+                    bar_width: 0
+                    do_scroll_x: False
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        adaptive_height: True
+                        spacing: dp(12)
+                        padding: 0, 0, 0, dp(24)
+                        MDLabel:
+                            text: "Create your account" if app.signup_mode else "Welcome back"
+                            font_style: "H5"
+                            bold: True
+                            theme_text_color: "Custom"
+                            text_color: INK
+                            size_hint_y: None
+                            height: dp(40)
+                        MDBoxLayout:
+                            orientation: "vertical"
+                            spacing: dp(12)
+                            size_hint_y: None
+                            height: (dp(64) * 2 + dp(12)) if app.signup_mode else 0
+                            opacity: 1 if app.signup_mode else 0
+                            disabled: not app.signup_mode
+                            MDTextField:
+                                id: display_field
+                                hint_text: "Display name (shown to friends)"
+                                mode: "rectangle"
+                            MDTextField:
+                                id: username_field
+                                hint_text: "Username (letters, numbers, _ .)"
+                                mode: "rectangle"
+                        MDTextField:
+                            id: email_field
+                            hint_text: "Email"
+                            mode: "rectangle"
+                            input_type: "mail"
+                        MDTextField:
+                            id: pass_field
+                            hint_text: "Password (min 6 characters)"
+                            mode: "rectangle"
+                            password: True
+                            on_text_validate: app.submit()
+                        MDRaisedButton:
+                            text: "Please wait..." if app.loading else ("Create account" if app.signup_mode else "Sign in")
+                            size_hint: 1, None
+                            height: dp(52)
+                            font_size: "16sp"
+                            md_bg_color: PRIMARY
+                            disabled: app.loading
+                            on_release: app.submit()
+                        MDFlatButton:
+                            text: "Have an account? Sign in" if app.signup_mode else "New here? Create account"
+                            pos_hint: {"center_x": .5}
+                            theme_text_color: "Custom"
+                            text_color: PRIMARY
+                            on_release: app.toggle_mode()
 
     MDScreen:
         name: "contacts"
@@ -259,11 +291,11 @@ MDScreenManager:
                         size_hint_y: None
                         height: dp(18)
                 MDIconButton:
-                    icon: "logout"
+                    icon: "account-circle-outline"
                     pos_hint: {"center_y": .5}
                     theme_icon_color: "Custom"
-                    icon_color: MUTED
-                    on_release: app.logout()
+                    icon_color: PRIMARY
+                    on_release: app.open_profile()
             MDBoxLayout:
                 size_hint_y: None
                 height: dp(60)
@@ -302,7 +334,7 @@ MDScreenManager:
                     adaptive_height: True
 
     MDScreen:
-        name: "chat"
+        name: "profile"
         md_bg_color: BG
         MDBoxLayout:
             orientation: "vertical"
@@ -317,25 +349,10 @@ MDScreenManager:
                     pos_hint: {"center_y": .5}
                     theme_icon_color: "Custom"
                     icon_color: INK
-                    on_release: app.back()
-                MDCard:
-                    size_hint: None, None
-                    size: dp(42), dp(42)
-                    radius: [dp(21)]
-                    elevation: 0
-                    pos_hint: {"center_y": .5}
-                    md_bg_color: app.peer_color
-                    MDLabel:
-                        text: app.peer_initial
-                        text_size: self.size
-                        halign: "center"
-                        valign: "middle"
-                        bold: True
-                        theme_text_color: "Custom"
-                        text_color: WHITE
+                    on_release: app.close_profile()
                 MDLabel:
-                    text: app.peer_name
-                    font_style: "Subtitle1"
+                    text: "Profile"
+                    font_style: "H6"
                     bold: True
                     theme_text_color: "Custom"
                     text_color: INK
@@ -343,6 +360,126 @@ MDScreenManager:
                     text_size: self.width, None
                     height: self.texture_size[1]
                     pos_hint: {"center_y": .5}
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(1)
+                md_bg_color: LINE
+            ScrollView:
+                bar_width: 0
+                do_scroll_x: False
+                MDBoxLayout:
+                    orientation: "vertical"
+                    adaptive_height: True
+                    padding: dp(24)
+                    spacing: dp(14)
+                    AvatarDot:
+                        size: dp(96), dp(96)
+                        pos_hint: {"center_x": .5}
+                        initial: app.me_initial
+                        color: app.me_color
+                    MDLabel:
+                        text: "@" + app.me_username
+                        halign: "center"
+                        font_style: "Subtitle1"
+                        theme_text_color: "Custom"
+                        text_color: MUTED
+                        size_hint_y: None
+                        text_size: self.width, None
+                        height: self.texture_size[1]
+                    MDTextField:
+                        id: name_field
+                        hint_text: "Display name"
+                        mode: "rectangle"
+                    MDRaisedButton:
+                        text: "Save"
+                        size_hint: 1, None
+                        height: dp(48)
+                        font_size: "16sp"
+                        md_bg_color: PRIMARY
+                        disabled: app.loading
+                        on_release: app.save_profile()
+                    MDCard:
+                        size_hint_y: None
+                        height: dp(72)
+                        radius: [dp(16)]
+                        elevation: 0
+                        md_bg_color: WHITE
+                        padding: dp(16), 0
+                        MDBoxLayout:
+                            orientation: "vertical"
+                            adaptive_height: True
+                            pos_hint: {"center_y": .5}
+                            MDLabel:
+                                text: "Show when I'm active"
+                                font_style: "Subtitle1"
+                                theme_text_color: "Custom"
+                                text_color: INK
+                                size_hint_y: None
+                                text_size: self.width, None
+                                height: self.texture_size[1]
+                            MDLabel:
+                                text: "Friends can see when you are online"
+                                font_style: "Caption"
+                                theme_text_color: "Custom"
+                                text_color: MUTED
+                                size_hint_y: None
+                                text_size: self.width, None
+                                height: self.texture_size[1]
+                        MDSwitch:
+                            id: active_switch
+                            pos_hint: {"center_y": .5}
+                            on_active: app.set_show_active(self.active)
+                    MDFlatButton:
+                        text: "Log out"
+                        pos_hint: {"center_x": .5}
+                        theme_text_color: "Custom"
+                        text_color: (0.86, 0.2, 0.25, 1)
+                        on_release: app.logout()
+
+    MDScreen:
+        name: "chat"
+        md_bg_color: BG
+        MDBoxLayout:
+            orientation: "vertical"
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(64)
+                md_bg_color: WHITE
+                padding: dp(4), dp(6), dp(12), dp(6)
+                spacing: dp(8)
+                MDIconButton:
+                    icon: "arrow-left"
+                    pos_hint: {"center_y": .5}
+                    theme_icon_color: "Custom"
+                    icon_color: INK
+                    on_release: app.back()
+                AvatarDot:
+                    size: dp(42), dp(42)
+                    pos_hint: {"center_y": .5}
+                    initial: app.peer_initial
+                    color: app.peer_color
+                    online: app.peer_active
+                MDBoxLayout:
+                    orientation: "vertical"
+                    adaptive_height: True
+                    pos_hint: {"center_y": .5}
+                    MDLabel:
+                        text: app.peer_name
+                        font_style: "Subtitle1"
+                        bold: True
+                        theme_text_color: "Custom"
+                        text_color: INK
+                        size_hint_y: None
+                        text_size: self.width, None
+                        height: self.texture_size[1]
+                    MDLabel:
+                        text: app.peer_status
+                        font_style: "Caption"
+                        theme_text_color: "Custom"
+                        text_color: GREEN if app.peer_active else MUTED
+                        size_hint_y: None
+                        text_size: self.width, None
+                        height: self.texture_size[1] if self.text else 0
             MDBoxLayout:
                 size_hint_y: None
                 height: dp(1)
@@ -419,6 +556,26 @@ def fmt_time(ts):
         return str(ts)[11:16]
 
 
+def name_of(u):
+    return (u.get("display_name") or u.get("username") or "?").strip()
+
+
+def is_online(sec):
+    return sec is not None and sec < 70
+
+
+def presence_text(sec):
+    if sec is None:
+        return ""
+    if sec < 70:
+        return "Active now"
+    m = int(sec // 60)
+    if m < 60:
+        return f"Active {m}m ago"
+    h = m // 60
+    return f"Active {h}h ago" if h < 24 else f"Active {h // 24}d ago"
+
+
 class Supa:
     """Minimal Supabase client (Auth + PostgREST) using plain HTTPS requests."""
 
@@ -465,9 +622,10 @@ class Supa:
                                 json={"refresh_token": self.refresh}))
 
     # ----- auth -----
-    def sign_up(self, email, password, username):
+    def sign_up(self, email, password, username, display_name=""):
         d = self._req("POST", "/auth/v1/signup", auth=False,
-                      json={"email": email, "password": password, "data": {"username": username}})
+                      json={"email": email, "password": password,
+                            "data": {"username": username, "display_name": display_name}})
         if d and d.get("access_token"):
             self._set(d)
             return True
@@ -486,8 +644,36 @@ class Supa:
 
     # ----- data -----
     def users(self):
-        rows = self._req("GET", "/rest/v1/profiles", params={"select": "id,username", "order": "username"})
-        return [r for r in rows if r["id"] != self.uid]
+        """People with display names + presence. Falls back if supabase/update_v2.sql was not run yet."""
+        try:
+            rows = self._req("POST", "/rest/v1/rpc/get_people", json={})
+            return [{"id": r["id"], "username": r["username"], "display_name": r.get("display_name"),
+                     "seconds_ago": r.get("seconds_ago")} for r in rows]
+        except RuntimeError:
+            rows = self._req("GET", "/rest/v1/profiles", params={"select": "id,username", "order": "username"})
+            return [{"id": r["id"], "username": r["username"], "display_name": None, "seconds_ago": None}
+                    for r in rows if r["id"] != self.uid]
+
+    def me(self):
+        for cols in ("id,username,display_name,show_active", "id,username"):
+            try:
+                rows = self._req("GET", "/rest/v1/profiles", params={"select": cols, "id": f"eq.{self.uid}"})
+                if rows:
+                    return rows[0]
+            except RuntimeError:
+                continue
+        return {"id": self.uid, "username": self.username}
+
+    def set_display_name(self, name):
+        self._req("PATCH", "/rest/v1/profiles", params={"id": f"eq.{self.uid}"},
+                  json={"display_name": name or None}, headers={"Prefer": "return=minimal"})
+
+    def set_show_active(self, flag):
+        self._req("PATCH", "/rest/v1/profiles", params={"id": f"eq.{self.uid}"},
+                  json={"show_active": bool(flag)}, headers={"Prefer": "return=minimal"})
+
+    def touch(self):
+        self._req("POST", "/rest/v1/rpc/touch_presence", json={})
 
     def history(self, peer):
         a, b = self.uid, peer
@@ -522,24 +708,29 @@ class LocalDB:
         self.conn.row_factory = sqlite3.Row
         with self.lock, self.conn:
             self.conn.executescript("""
-                CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY, username TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY, username TEXT NOT NULL, display_name TEXT);
                 CREATE TABLE IF NOT EXISTS messages(
                     id INTEGER PRIMARY KEY, sender TEXT NOT NULL, receiver TEXT NOT NULL,
                     text TEXT NOT NULL, created_at TEXT);
                 CREATE INDEX IF NOT EXISTS idx_pair ON messages(sender, receiver, id);
                 CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY, value TEXT);
             """)
+            cols = [r[1] for r in self.conn.execute("PRAGMA table_info(users)")]
+            if "display_name" not in cols:  # cache created by an older app version
+                self.conn.execute("ALTER TABLE users ADD COLUMN display_name TEXT")
 
     def save_users(self, users):
         with self.lock, self.conn:
             self.conn.execute("DELETE FROM users")
-            self.conn.executemany("INSERT INTO users(id, username) VALUES(?, ?)",
-                                  [(u["id"], u["username"]) for u in users])
+            self.conn.executemany("INSERT INTO users(id, username, display_name) VALUES(?, ?, ?)",
+                                  [(u["id"], u["username"], u.get("display_name")) for u in users])
 
     def load_users(self):
         with self.lock:
-            rows = self.conn.execute("SELECT id, username FROM users ORDER BY username").fetchall()
-        return [dict(r) for r in rows]
+            rows = self.conn.execute(
+                "SELECT id, username, display_name FROM users ORDER BY COALESCE(display_name, username)").fetchall()
+        return [{"id": r["id"], "username": r["username"], "display_name": r["display_name"],
+                 "seconds_ago": None} for r in rows]
 
     def save_messages(self, msgs):
         with self.lock, self.conn:
@@ -615,12 +806,20 @@ class Bubble(MDBoxLayout):
     mine = BooleanProperty(False)
 
 
+class AvatarDot(MDFloatLayout):
+    """Round avatar with an initial and an optional green 'active' dot."""
+    initial = StringProperty("?")
+    color = ListProperty([0, 0.52, 1, 1])
+    online = BooleanProperty(False)
+
+
 class ContactRow(ButtonBehavior, MDBoxLayout):
     name = StringProperty("")
     subtitle = StringProperty("")
     initial = StringProperty("?")
     avatar_color = ListProperty([0, 0.52, 1, 1])
     unread = NumericProperty(0)
+    online = BooleanProperty(False)
 
 
 class ChatApp(MDApp):
@@ -630,6 +829,11 @@ class ChatApp(MDApp):
     peer_name = StringProperty("")
     peer_initial = StringProperty("")
     peer_color = ListProperty([0, 0.52, 1, 1])
+    peer_status = StringProperty("")
+    peer_active = BooleanProperty(False)
+    me_username = StringProperty("")
+    me_initial = StringProperty("?")
+    me_color = ListProperty([0, 0.52, 1, 1])
 
     def build(self):
         self.title = "Chatly"
@@ -645,11 +849,15 @@ class ChatApp(MDApp):
         self.last_id = 0
         self.poll_busy = False
         self.tick = 0
+        self.me = {}
+        self._profile_loading = False
         Window.softinput_mode = "below_target"
+        Window.bind(on_keyboard=self._on_key)
         return Builder.load_string(KV)
 
     def on_start(self):
         Clock.schedule_interval(self.poll, 2.5)
+        Clock.schedule_interval(self.heartbeat, 30)
         if self.store.exists("session"):
             self.api.refresh = self.store.get("session")["refresh"]
             self.api.exp = 0
@@ -690,6 +898,47 @@ class ChatApp(MDApp):
     def toggle_mode(self):
         self.signup_mode = not self.signup_mode
 
+    def set_me(self, me):
+        self.me = me or {}
+        self.me_username = self.me.get("username") or self.api.username
+        self.me_name = self.me.get("display_name") or self.me_username
+        self.me_initial = initial(self.me_name)
+        self.me_color = avatar_color(self.me_username)
+
+    def users_key(self, users):
+        return [(u["id"], name_of(u), is_online(u.get("seconds_ago"))) for u in users]
+
+    def user_by_id(self, uid):
+        return next((u for u in self.users if u["id"] == uid), None)
+
+    def update_peer_status(self):
+        u = self.user_by_id(self.peer) if self.peer else None
+        if not u:
+            return
+        self.peer_name = name_of(u)
+        self.peer_initial = initial(self.peer_name)
+        self.peer_active = is_online(u.get("seconds_ago"))
+        self.peer_status = presence_text(u.get("seconds_ago"))
+
+    def heartbeat(self, dt):
+        """Tell the server we are active (others see 'Active now')."""
+        if self.api.uid and not self.loading:
+            self.bg(self.api.touch, None, lambda e: None)
+
+    def on_resume(self):
+        self.heartbeat(0)
+
+    def _on_key(self, window, key, *args):
+        """Android back button: go back a screen instead of closing the app."""
+        if key == 27 and self.root:
+            if self.root.current == "chat":
+                self.back()
+                return True
+            if self.root.current == "profile":
+                self.close_profile()
+                return True
+        return False
+
     # ---------- auth ----------
     def submit(self):
         url, key = config.SUPABASE_URL, config.SUPABASE_ANON_KEY
@@ -705,11 +954,17 @@ class ChatApp(MDApp):
         self.loading = True
         if self.signup_mode:
             name = ids.username_field.text.strip()
-            if not 3 <= len(name) <= 24:
+            display = ids.display_field.text.strip()
+            if not re.fullmatch(r"[A-Za-z0-9_.]{3,24}", name):
                 self.loading = False
-                self.notify("Username must be 3-24 characters")
+                self.notify("Username must be 3-24 characters: letters, numbers, _ or .")
                 return
-            self.bg(lambda: self.api.sign_up(email, pw, name), self.signed_up, self.auth_fail)
+            if len(display) > 40:
+                self.loading = False
+                self.notify("Display name can be up to 40 characters")
+                return
+            display = display or name
+            self.bg(lambda: self.api.sign_up(email, pw, name, display), self.signed_up, self.auth_fail)
         else:
             self.bg(lambda: self.api.sign_in(email, pw), lambda _: self.enter_app(), self.auth_fail)
 
@@ -730,10 +985,14 @@ class ChatApp(MDApp):
 
     def restore_failed(self, e):
         self.loading = False
+        if isinstance(e, requests.RequestException):
+            self.notify("No internet connection. Check your network and reopen the app.")
+            return  # keep the saved session
         if self.store.exists("session"):
             self.store.delete("session")
 
     def enter_app(self):
+        self.me_username = self.api.username
         self.me_name = self.api.username
         self.root.ids.pass_field.text = ""
 
@@ -746,13 +1005,19 @@ class ChatApp(MDApp):
 
         def init():
             users = self.api.users()
+            me = self.api.me()
             last = resume_from if resume_from is not None else self.api.latest_incoming_id()
             local.save_users(users)
             local.set_meta("last_id", last)
-            return users, last
+            try:
+                self.api.touch()
+            except Exception:
+                pass
+            return users, last, me
 
         def done(res):
-            self.users, self.last_id = res
+            self.users, self.last_id, me = res
+            self.set_me(me)
             self.loading = False
             self.refresh_contacts()
             self.root.current = "contacts"
@@ -769,6 +1034,7 @@ class ChatApp(MDApp):
             threading.Thread(target=local.destroy, daemon=True).start()
         self.users, self.msgs, self.unread, self.seen = [], {}, {}, set()
         self.peer, self.last_id = None, 0
+        self.me, self.me_name, self.peer_status, self.peer_active = {}, "", "", False
         self.root.ids.contact_list.clear_widgets()
         self.root.current = "login"
 
@@ -796,8 +1062,11 @@ class ChatApp(MDApp):
             self.poll_busy = False
             inc, users = res
             changed = False
-            if users is not None and users != self.users:
-                self.users, changed = users, True
+            if users is not None:
+                if self.users_key(users) != self.users_key(self.users):
+                    changed = True
+                self.users = users
+                self.update_peer_status()
             for m in inc:
                 self.last_id = max(self.last_id, m["id"])
                 if m["id"] in self.seen:
@@ -827,22 +1096,24 @@ class ChatApp(MDApp):
         lst.clear_widgets()
         rows = []
         for u in self.users:
-            if q and q not in u["username"].lower():
+            name = name_of(u)
+            if q and q not in name.lower() and q not in u["username"].lower():
                 continue
             last = self.local.last_message(self.api.uid, u["id"]) if self.local and self.api.uid else None
-            rows.append((last["id"] if last else 0, u, last))
-        rows.sort(key=lambda r: (-r[0], r[1]["username"].lower()))  # recent chats first
-        for _, u, last in rows:
+            rows.append((last["id"] if last else 0, name, u, last))
+        rows.sort(key=lambda r: (-r[0], r[1].lower()))  # recent chats first
+        for _, name, u, last in rows:
             if last:
                 text = " ".join(last["text"].split())
                 text = text if len(text) <= 38 else text[:36] + "..."
                 sub = ("You: " if last["sender"] == self.api.uid else "") + text
             else:
-                sub = "Tap to start chatting"
+                sub = "@" + u["username"]
             lst.add_widget(ContactRow(
-                name=u["username"], subtitle=sub, initial=initial(u["username"]),
+                name=name, subtitle=sub, initial=initial(name),
                 avatar_color=avatar_color(u["username"]), unread=self.unread.get(u["id"], 0),
-                on_release=lambda x, uid=u["id"], name=u["username"]: self.open_chat(uid, name)))
+                online=is_online(u.get("seconds_ago")),
+                on_release=lambda x, uid=u["id"], n=name: self.open_chat(uid, n)))
         if not rows:
             lst.add_widget(MDLabel(
                 text="No matches" if q else "No one else has joined yet.\nInvite a friend to create an account!",
@@ -852,7 +1123,10 @@ class ChatApp(MDApp):
     def open_chat(self, uid, name):
         self.peer = uid
         self.unread.pop(uid, None)
-        self.peer_name, self.peer_initial, self.peer_color = name, initial(name), avatar_color(name)
+        u = self.user_by_id(uid)
+        self.peer_name, self.peer_initial = name, initial(name)
+        self.peer_color = avatar_color(u["username"] if u else name)
+        self.update_peer_status()
         self.root.current = "chat"
         cached = self.local.load_history(self.api.uid, uid) if self.local else []
         if cached:
@@ -880,6 +1154,40 @@ class ChatApp(MDApp):
         self.peer = None
         self.root.current = "contacts"
         self.refresh_contacts()
+
+    # ---------- profile ----------
+    def open_profile(self):
+        ids = self.root.ids
+        self._profile_loading = True
+        ids.name_field.text = self.me.get("display_name") or ""
+        ids.active_switch.active = self.me.get("show_active") is not False
+        self._profile_loading = False
+        self.root.current = "profile"
+
+    def close_profile(self):
+        self.root.current = "contacts"
+        self.refresh_contacts()
+
+    def save_profile(self):
+        name = self.root.ids.name_field.text.strip()
+        if len(name) > 40:
+            self.notify("Display name can be up to 40 characters")
+            return
+        self.loading = True
+
+        def done(_):
+            self.loading = False
+            self.me["display_name"] = name or None
+            self.set_me(self.me)
+            self.close_profile()
+
+        self.bg(lambda: self.api.set_display_name(name), done)
+
+    def set_show_active(self, flag):
+        if self._profile_loading or not self.api.uid:
+            return
+        self.me["show_active"] = bool(flag)
+        self.bg(lambda: self.api.set_show_active(flag), None, self.show_err)
 
     def rebuild_chat(self):
         box = self.root.ids.msg_list
@@ -919,7 +1227,12 @@ class ChatApp(MDApp):
             if self.peer == peer:
                 self.add_bubble(m)
 
-        self.bg(push, done)
+        def fail(e):
+            if not field.text:
+                field.text = text
+            self.show_err(e)
+
+        self.bg(push, done, fail)
 
 
 if __name__ == "__main__":

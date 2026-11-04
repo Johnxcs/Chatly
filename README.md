@@ -15,3 +15,7 @@ Repo -> Settings -> Secrets and variables -> Actions -> New repository secret:
 Push to main (or run the workflow manually in the Actions tab) and download the `chatly-apk` artifact.
 
 For local testing, edit `config.py` and run `python main.py`.
+
+## Updating an existing Supabase project (display names + active status)
+Run `supabase/update_v2.sql` once in the Supabase SQL Editor. New projects can run `supabase/schema.sql` instead.
+The app still works without this update, but display names and "Active now" stay off until it is run.
