@@ -23,3 +23,6 @@ The app still works without this update, but display names and "Active now" stay
 ## Notes + active friends strip
 Run `supabase/update_v3.sql` once (after update_v2.sql) to enable notes. Without it the strip still shows
 friends who are active, but notes are off.
+
+## Settings: delete account
+Run `supabase/update_v4.sql` once to enable Settings -> Delete account. Everything else in Settings works without it.

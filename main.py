@@ -152,6 +152,47 @@ KV = """
         max_lines: 1
         text_size: self.width, None
 
+<SectionLabel>:
+    halign: "left"
+    font_style: "Caption"
+    bold: True
+    theme_text_color: "Custom"
+    text_color: MUTED
+    size_hint_y: None
+    text_size: self.width, None
+    height: self.texture_size[1] + dp(6)
+
+<SwitchRow>:
+    orientation: "horizontal"
+    size_hint_y: None
+    height: dp(64)
+    spacing: dp(8)
+    padding: 0, 0, dp(14), 0
+    MDBoxLayout:
+        orientation: "vertical"
+        adaptive_height: True
+        pos_hint: {"center_y": .5}
+        MDLabel:
+            text: root.title
+            font_style: "Subtitle1"
+            theme_text_color: "Custom"
+            text_color: INK
+            size_hint_y: None
+            text_size: self.width, None
+            height: self.texture_size[1]
+        MDLabel:
+            text: root.subtitle
+            font_style: "Caption"
+            theme_text_color: "Custom"
+            text_color: MUTED
+            size_hint_y: None
+            text_size: self.width, None
+            height: self.texture_size[1]
+    MDSwitch:
+        active: root.active
+        pos_hint: {"center_y": .5}
+        on_active: root.active = self.active
+
 <Bubble>:
     orientation: "horizontal"
     adaptive_height: True
@@ -378,11 +419,11 @@ MDScreenManager:
                         size_hint_y: None
                         height: dp(18)
                 MDIconButton:
-                    icon: "account-circle-outline"
+                    icon: "cog-outline"
                     pos_hint: {"center_y": .5}
                     theme_icon_color: "Custom"
                     icon_color: PRIMARY
-                    on_release: app.open_profile()
+                    on_release: app.open_settings()
             MDBoxLayout:
                 size_hint_y: None
                 height: dp(60)
@@ -434,7 +475,7 @@ MDScreenManager:
                     adaptive_height: True
 
     MDScreen:
-        name: "profile"
+        name: "settings"
         md_bg_color: BG
         MDBoxLayout:
             orientation: "vertical"
@@ -449,9 +490,9 @@ MDScreenManager:
                     pos_hint: {"center_y": .5}
                     theme_icon_color: "Custom"
                     icon_color: INK
-                    on_release: app.close_profile()
+                    on_release: app.close_settings()
                 MDLabel:
-                    text: "Profile"
+                    text: "Settings"
                     font_style: "H6"
                     bold: True
                     theme_text_color: "Custom"
@@ -470,10 +511,10 @@ MDScreenManager:
                 MDBoxLayout:
                     orientation: "vertical"
                     adaptive_height: True
-                    padding: dp(24)
-                    spacing: dp(14)
+                    padding: dp(16), dp(18), dp(16), dp(30)
+                    spacing: dp(10)
                     AvatarDot:
-                        size: dp(96), dp(96)
+                        size: dp(88), dp(88)
                         pos_hint: {"center_x": .5}
                         initial: app.me_initial
                         color: app.me_color
@@ -486,55 +527,154 @@ MDScreenManager:
                         size_hint_y: None
                         text_size: self.width, None
                         height: self.texture_size[1]
-                    MDTextField:
-                        id: name_field
-                        hint_text: "Display name"
-                        mode: "rectangle"
-                    MDRaisedButton:
-                        text: "Save"
-                        size_hint: 1, None
-                        height: dp(48)
-                        font_size: "16sp"
-                        md_bg_color: PRIMARY
-                        disabled: app.loading
-                        on_release: app.save_profile()
-                    MDCard:
+                    MDLabel:
+                        text: app.me_email
+                        halign: "center"
+                        font_style: "Caption"
+                        theme_text_color: "Custom"
+                        text_color: MUTED
                         size_hint_y: None
-                        height: dp(72)
-                        radius: [dp(16)]
-                        elevation: 0
+                        text_size: self.width, None
+                        height: self.texture_size[1]
+                    SectionLabel:
+                        text: "PROFILE"
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        adaptive_height: True
                         md_bg_color: WHITE
-                        padding: dp(16), 0, dp(30), 0
-                        MDBoxLayout:
-                            orientation: "vertical"
-                            adaptive_height: True
-                            pos_hint: {"center_y": .5}
-                            MDLabel:
-                                text: "Show when I'm active"
-                                font_style: "Subtitle1"
-                                theme_text_color: "Custom"
-                                text_color: INK
-                                size_hint_y: None
-                                text_size: self.width, None
-                                height: self.texture_size[1]
-                            MDLabel:
-                                text: "Friends can see when you are online"
-                                font_style: "Caption"
-                                theme_text_color: "Custom"
-                                text_color: MUTED
-                                size_hint_y: None
-                                text_size: self.width, None
-                                height: self.texture_size[1]
-                        MDSwitch:
-                            id: active_switch
-                            pos_hint: {"center_y": .5}
+                        radius: [dp(16)]
+                        padding: dp(14)
+                        spacing: dp(12)
+                        MDTextField:
+                            id: name_field
+                            hint_text: "Display name"
+                            mode: "rectangle"
+                        MDRaisedButton:
+                            text: "Save"
+                            size_hint: 1, None
+                            height: dp(48)
+                            font_size: "16sp"
+                            md_bg_color: PRIMARY
+                            disabled: app.loading
+                            on_release: app.save_profile()
+                    SectionLabel:
+                        text: "PRIVACY"
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        adaptive_height: True
+                        md_bg_color: WHITE
+                        radius: [dp(16)]
+                        padding: dp(16), dp(4)
+                        SwitchRow:
+                            id: active_row
+                            title: "Show when I'm active"
+                            subtitle: "Friends can see when you are online"
                             on_active: app.set_show_active(self.active)
+                    SectionLabel:
+                        text: "CHATS"
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        adaptive_height: True
+                        md_bg_color: WHITE
+                        radius: [dp(16)]
+                        padding: dp(16), dp(4)
+                        SwitchRow:
+                            id: rail_row
+                            title: "Active friends strip"
+                            subtitle: "Show friends and notes at the top of Chats"
+                            on_active: app.set_pref("rail", self.active)
+                        SwitchRow:
+                            id: preview_row
+                            title: "Message previews"
+                            subtitle: "Show the last message in your chat list"
+                            on_active: app.set_pref("previews", self.active)
+                    SectionLabel:
+                        text: "SECURITY"
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        adaptive_height: True
+                        md_bg_color: WHITE
+                        radius: [dp(16)]
+                        padding: dp(14)
+                        spacing: dp(12)
+                        MDTextField:
+                            id: pw_new
+                            hint_text: "New password (min 6 characters)"
+                            mode: "rectangle"
+                            password: True
+                        MDTextField:
+                            id: pw_confirm
+                            hint_text: "Confirm new password"
+                            mode: "rectangle"
+                            password: True
+                        MDRaisedButton:
+                            text: "Update password"
+                            size_hint: 1, None
+                            height: dp(48)
+                            font_size: "16sp"
+                            md_bg_color: PRIMARY
+                            disabled: app.loading
+                            on_release: app.change_password()
+                    SectionLabel:
+                        text: "STORAGE"
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        adaptive_height: True
+                        md_bg_color: WHITE
+                        radius: [dp(16)]
+                        padding: dp(16), dp(12)
+                        spacing: dp(4)
+                        MDLabel:
+                            text: "Chats are saved on this phone so they open instantly. Clearing them is safe: they reload from the server."
+                            font_style: "Body2"
+                            theme_text_color: "Custom"
+                            text_color: MUTED
+                            size_hint_y: None
+                            text_size: self.width, None
+                            height: self.texture_size[1]
+                        MDFlatButton:
+                            text: "Clear saved chats"
+                            theme_text_color: "Custom"
+                            text_color: PRIMARY
+                            on_release: app.clear_cache()
+                    SectionLabel:
+                        text: "ABOUT"
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        adaptive_height: True
+                        md_bg_color: WHITE
+                        radius: [dp(16)]
+                        padding: dp(16), dp(12)
+                        spacing: dp(2)
+                        MDLabel:
+                            text: "Chatly"
+                            font_style: "Subtitle1"
+                            bold: True
+                            theme_text_color: "Custom"
+                            text_color: INK
+                            size_hint_y: None
+                            text_size: self.width, None
+                            height: self.texture_size[1]
+                        MDLabel:
+                            text: "Version 1.0"
+                            font_style: "Caption"
+                            theme_text_color: "Custom"
+                            text_color: MUTED
+                            size_hint_y: None
+                            text_size: self.width, None
+                            height: self.texture_size[1]
                     MDFlatButton:
                         text: "Log out"
                         pos_hint: {"center_x": .5}
                         theme_text_color: "Custom"
-                        text_color: (0.86, 0.2, 0.25, 1)
+                        text_color: INK
                         on_release: app.logout()
+                    MDFlatButton:
+                        text: "Delete account"
+                        pos_hint: {"center_x": .5}
+                        theme_text_color: "Custom"
+                        text_color: (0.86, 0.2, 0.25, 1)
+                        on_release: app.confirm_delete_account()
 
     MDScreen:
         name: "note"
@@ -808,6 +948,7 @@ class Supa:
         self.key = config.SUPABASE_ANON_KEY
         self.access = self.refresh = self.uid = None
         self.username = ""
+        self.email = ""
         self.exp = 0
         self.on_tokens = on_tokens
 
@@ -836,6 +977,7 @@ class Supa:
         self.exp = time.time() + d.get("expires_in", 3600) - 60
         user = d["user"]
         self.uid = user["id"]
+        self.email = user.get("email") or ""
         self.username = (user.get("user_metadata") or {}).get("username", "")
         if self.on_tokens:
             self.on_tokens(self.refresh)
@@ -901,6 +1043,12 @@ class Supa:
     def set_show_active(self, flag):
         self._req("PATCH", "/rest/v1/profiles", params={"id": f"eq.{self.uid}"},
                   json={"show_active": bool(flag)}, headers={"Prefer": "return=minimal"})
+
+    def change_password(self, new_password):
+        self._req("PUT", "/auth/v1/user", json={"password": new_password})
+
+    def delete_account(self):
+        self._req("POST", "/rest/v1/rpc/delete_my_account", json={})
 
     def set_note(self, text):
         self._req("POST", "/rest/v1/rpc/set_note", json={"p_note": text})
@@ -986,6 +1134,11 @@ class LocalDB:
                 "OR (sender=? AND receiver=?) ORDER BY id DESC LIMIT 1", (me, peer, peer, me)).fetchone()
         return dict(row) if row else None
 
+    def clear_cache(self):
+        with self.lock, self.conn:
+            self.conn.execute("DELETE FROM messages")
+            self.conn.execute("DELETE FROM users")
+
     def get_meta(self, key):
         with self.lock:
             row = self.conn.execute("SELECT value FROM meta WHERE key=?", (key,)).fetchone()
@@ -1062,6 +1215,17 @@ class AvatarDot(MDFloatLayout):
     plus = BooleanProperty(False)
 
 
+class SectionLabel(MDLabel):
+    """Small grey heading above a group of settings."""
+
+
+class SwitchRow(MDBoxLayout):
+    """Title + subtitle with an on/off switch (two-way bound to `active`)."""
+    title = StringProperty("")
+    subtitle = StringProperty("")
+    active = BooleanProperty(False)
+
+
 class TapBox(ButtonBehavior, MDBoxLayout):
     """A plain tappable container."""
 
@@ -1097,6 +1261,7 @@ class ChatApp(MDApp):
     peer_status = StringProperty("")
     peer_active = BooleanProperty(False)
     me_username = StringProperty("")
+    me_email = StringProperty("")
     me_initial = StringProperty("?")
     me_color = ListProperty([0, 0.52, 1, 1])
     note_ready = BooleanProperty(False)
@@ -1118,6 +1283,9 @@ class ChatApp(MDApp):
         self.tick = 0
         self.me = {}
         self._profile_loading = False
+        self.prefs = {"previews": True, "rail": True}
+        if self.store.exists("prefs"):
+            self.prefs.update(self.store.get("prefs"))
         Window.softinput_mode = "below_target"
         Window.bind(on_keyboard=self._on_key)
         return Builder.load_string(KV)
@@ -1167,6 +1335,7 @@ class ChatApp(MDApp):
 
     def set_me(self, me):
         self.me = me or {}
+        self.me_email = self.api.email or ""
         self.me_username = self.me.get("username") or self.api.username
         self.me_name = self.me.get("display_name") or self.me_username
         self.me_initial = initial(self.me_name)
@@ -1202,8 +1371,8 @@ class ChatApp(MDApp):
             if self.root.current == "chat":
                 self.back()
                 return True
-            if self.root.current == "profile":
-                self.close_profile()
+            if self.root.current == "settings":
+                self.close_settings()
                 return True
             if self.root.current == "note":
                 self.close_note()
@@ -1374,7 +1543,7 @@ class ChatApp(MDApp):
             rows.append((last["id"] if last else 0, name, u, last))
         rows.sort(key=lambda r: (-r[0], r[1].lower()))  # recent chats first
         for _, name, u, last in rows:
-            if last:
+            if last and self.prefs.get("previews", True):
                 text = " ".join(last["text"].split())
                 text = text if len(text) <= 38 else text[:36] + "..."
                 sub = ("You: " if last["sender"] == self.api.uid else "") + text
@@ -1390,8 +1559,9 @@ class ChatApp(MDApp):
                 text="No matches" if q else "No one else has joined yet.\nInvite a friend to create an account!",
                 halign="center", theme_text_color="Hint", size_hint_y=None, height=dp(140)))
         sv = self.root.ids.rail_sv
-        sv.height, sv.opacity = (0, 0) if q else (dp(126), 1)  # hide the rail while searching
-        if not q:
+        hide = bool(q) or not self.prefs.get("rail", True)  # hidden while searching or if turned off
+        sv.height, sv.opacity = (0, 0) if hide else (dp(126), 1)
+        if not hide:
             self.refresh_rail()
 
     def refresh_rail(self):
@@ -1463,15 +1633,18 @@ class ChatApp(MDApp):
         self.refresh_contacts()
 
     # ---------- profile ----------
-    def open_profile(self):
+    def open_settings(self):
         ids = self.root.ids
-        self._profile_loading = True
+        self._profile_loading = True  # don't treat these programmatic changes as user taps
         ids.name_field.text = self.me.get("display_name") or ""
-        ids.active_switch.active = self.me.get("show_active") is not False
+        ids.active_row.active = self.me.get("show_active") is not False
+        ids.rail_row.active = bool(self.prefs.get("rail", True))
+        ids.preview_row.active = bool(self.prefs.get("previews", True))
+        ids.pw_new.text = ids.pw_confirm.text = ""
         self._profile_loading = False
-        self.root.current = "profile"
+        self.root.current = "settings"
 
-    def close_profile(self):
+    def close_settings(self):
         self.root.current = "contacts"
         self.refresh_contacts()
 
@@ -1486,7 +1659,7 @@ class ChatApp(MDApp):
             self.loading = False
             self.me["display_name"] = name or None
             self.set_me(self.me)
-            self.close_profile()
+            self.close_settings()
 
         self.bg(lambda: self.api.set_display_name(name), done)
 
@@ -1542,6 +1715,73 @@ class ChatApp(MDApp):
         if "set_note" in msg or "schema cache" in msg:
             msg = "Notes are not set up in your Supabase project yet. Run update_v3.sql in the SQL Editor."
         self.notify(msg[:200])
+
+    def set_pref(self, key, value):
+        """Device-level preferences (kept after log out)."""
+        if self._profile_loading:
+            return
+        self.prefs[key] = bool(value)
+        self.store.put("prefs", **self.prefs)
+        self.refresh_contacts()
+
+    def change_password(self):
+        ids = self.root.ids
+        pw, pw2 = ids.pw_new.text, ids.pw_confirm.text
+        if len(pw) < 6:
+            self.notify("Password must be at least 6 characters")
+            return
+        if pw != pw2:
+            self.notify("The two passwords do not match")
+            return
+        self.loading = True
+
+        def done(_):
+            self.loading = False
+            ids.pw_new.text = ids.pw_confirm.text = ""
+            self.notify("Password updated.")
+
+        self.bg(lambda: self.api.change_password(pw), done)
+
+    def clear_cache(self):
+        if self.local:
+            self.local.clear_cache()
+        self.msgs, self.seen = {}, set()
+        self.refresh_contacts()
+        self.notify("Saved chats were removed from this phone. They reload from the server when you open them.")
+
+    def confirm_delete_account(self):
+        def close(*args):
+            dlg.dismiss()
+
+        def go(*args):
+            dlg.dismiss()
+            self.delete_account()
+
+        dlg = MDDialog(
+            title="Delete account?",
+            text="This permanently deletes your account, profile and all your messages. "
+                 "This cannot be undone.",
+            buttons=[MDFlatButton(text="CANCEL", on_release=close),
+                     MDFlatButton(text="DELETE", theme_text_color="Custom",
+                                  text_color=(0.86, 0.2, 0.25, 1), on_release=go)])
+        dlg.open()
+
+    def delete_account(self):
+        self.loading = True
+
+        def done(_):
+            self.loading = False
+            self.logout()
+            self.notify("Your account was deleted.")
+
+        def fail(e):
+            self.loading = False
+            msg = str(e)
+            if "delete_my_account" in msg or "schema cache" in msg:
+                msg = "Account deletion is not set up yet. Run update_v4.sql in the Supabase SQL Editor."
+            self.notify(msg[:200])
+
+        self.bg(self.api.delete_account, done, fail)
 
     def set_show_active(self, flag):
         if self._profile_loading or not self.api.uid:
