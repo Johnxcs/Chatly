@@ -193,6 +193,48 @@ KV = """
         pos_hint: {"center_y": .5}
         on_active: root.active = self.active
 
+<MenuRow>:
+    orientation: "horizontal"
+    size_hint_y: None
+    height: dp(60)
+    spacing: dp(14)
+    padding: dp(4), 0
+    md_bg_color: (0.95, 0.96, 0.98, 1) if self.state == "down" else (1, 1, 1, 0)
+    MDIcon:
+        icon: root.icon
+        size_hint: None, None
+        size: dp(28), dp(28)
+        pos_hint: {"center_y": .5}
+        theme_text_color: "Custom"
+        text_color: PRIMARY
+    MDBoxLayout:
+        orientation: "vertical"
+        adaptive_height: True
+        pos_hint: {"center_y": .5}
+        MDLabel:
+            text: root.title
+            font_style: "Subtitle1"
+            theme_text_color: "Custom"
+            text_color: INK
+            size_hint_y: None
+            text_size: self.width, None
+            height: self.texture_size[1]
+        MDLabel:
+            text: root.subtitle
+            font_style: "Caption"
+            theme_text_color: "Custom"
+            text_color: MUTED
+            size_hint_y: None
+            text_size: self.width, None
+            height: self.texture_size[1]
+    MDIcon:
+        icon: "chevron-right"
+        size_hint: None, None
+        size: dp(24), dp(24)
+        pos_hint: {"center_y": .5}
+        theme_text_color: "Custom"
+        text_color: MUTED
+
 <Bubble>:
     orientation: "horizontal"
     adaptive_height: True
@@ -519,6 +561,16 @@ MDScreenManager:
                         initial: app.me_initial
                         color: app.me_color
                     MDLabel:
+                        text: app.me_name
+                        halign: "center"
+                        font_style: "H6"
+                        bold: True
+                        theme_text_color: "Custom"
+                        text_color: INK
+                        size_hint_y: None
+                        text_size: self.width, None
+                        height: self.texture_size[1]
+                    MDLabel:
                         text: "@" + app.me_username
                         halign: "center"
                         font_style: "Subtitle1"
@@ -537,26 +589,23 @@ MDScreenManager:
                         text_size: self.width, None
                         height: self.texture_size[1]
                     SectionLabel:
-                        text: "PROFILE"
+                        text: "ACCOUNT"
                     MDBoxLayout:
                         orientation: "vertical"
                         adaptive_height: True
                         md_bg_color: WHITE
                         radius: [dp(16)]
-                        padding: dp(14)
-                        spacing: dp(12)
-                        MDTextField:
-                            id: name_field
-                            hint_text: "Display name"
-                            mode: "rectangle"
-                        MDRaisedButton:
-                            text: "Save"
-                            size_hint: 1, None
-                            height: dp(48)
-                            font_size: "16sp"
-                            md_bg_color: PRIMARY
-                            disabled: app.loading
-                            on_release: app.save_profile()
+                        padding: dp(12), dp(4)
+                        MenuRow:
+                            icon: "account-outline"
+                            title: "Profile"
+                            subtitle: app.me_name
+                            on_release: app.open_profile()
+                        MenuRow:
+                            icon: "lock-outline"
+                            title: "Change password"
+                            subtitle: "Update your password"
+                            on_release: app.open_password()
                     SectionLabel:
                         text: "PRIVACY"
                     MDBoxLayout:
@@ -588,33 +637,6 @@ MDScreenManager:
                             title: "Message previews"
                             subtitle: "Show the last message in your chat list"
                             on_active: app.set_pref("previews", self.active)
-                    SectionLabel:
-                        text: "SECURITY"
-                    MDBoxLayout:
-                        orientation: "vertical"
-                        adaptive_height: True
-                        md_bg_color: WHITE
-                        radius: [dp(16)]
-                        padding: dp(14)
-                        spacing: dp(12)
-                        MDTextField:
-                            id: pw_new
-                            hint_text: "New password (min 6 characters)"
-                            mode: "rectangle"
-                            password: True
-                        MDTextField:
-                            id: pw_confirm
-                            hint_text: "Confirm new password"
-                            mode: "rectangle"
-                            password: True
-                        MDRaisedButton:
-                            text: "Update password"
-                            size_hint: 1, None
-                            height: dp(48)
-                            font_size: "16sp"
-                            md_bg_color: PRIMARY
-                            disabled: app.loading
-                            on_release: app.change_password()
                     SectionLabel:
                         text: "STORAGE"
                     MDBoxLayout:
@@ -675,6 +697,172 @@ MDScreenManager:
                         theme_text_color: "Custom"
                         text_color: (0.86, 0.2, 0.25, 1)
                         on_release: app.confirm_delete_account()
+
+    MDScreen:
+        name: "profile"
+        md_bg_color: BG
+        MDBoxLayout:
+            orientation: "vertical"
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(64)
+                md_bg_color: WHITE
+                padding: dp(4), dp(6), dp(12), dp(6)
+                spacing: dp(6)
+                MDIconButton:
+                    icon: "arrow-left"
+                    pos_hint: {"center_y": .5}
+                    theme_icon_color: "Custom"
+                    icon_color: INK
+                    on_release: app.back_to_settings()
+                MDLabel:
+                    text: "Profile"
+                    font_style: "H6"
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: INK
+                    size_hint_y: None
+                    text_size: self.width, None
+                    height: self.texture_size[1]
+                    pos_hint: {"center_y": .5}
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(1)
+                md_bg_color: LINE
+            ScrollView:
+                bar_width: 0
+                do_scroll_x: False
+                MDBoxLayout:
+                    orientation: "vertical"
+                    adaptive_height: True
+                    padding: dp(16), dp(22), dp(16), dp(30)
+                    spacing: dp(10)
+                    AvatarDot:
+                        size: dp(96), dp(96)
+                        pos_hint: {"center_x": .5}
+                        initial: app.me_initial
+                        color: app.me_color
+                    MDLabel:
+                        text: "@" + app.me_username
+                        halign: "center"
+                        font_style: "Subtitle1"
+                        theme_text_color: "Custom"
+                        text_color: MUTED
+                        size_hint_y: None
+                        text_size: self.width, None
+                        height: self.texture_size[1]
+                    MDLabel:
+                        text: app.me_email
+                        halign: "center"
+                        font_style: "Caption"
+                        theme_text_color: "Custom"
+                        text_color: MUTED
+                        size_hint_y: None
+                        text_size: self.width, None
+                        height: self.texture_size[1]
+                    SectionLabel:
+                        text: "DISPLAY NAME"
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        adaptive_height: True
+                        md_bg_color: WHITE
+                        radius: [dp(16)]
+                        padding: dp(14)
+                        spacing: dp(12)
+                        MDTextField:
+                            id: name_field
+                            hint_text: "Display name"
+                            mode: "rectangle"
+                        MDLabel:
+                            text: "This is the name your friends see in chats."
+                            font_style: "Caption"
+                            theme_text_color: "Custom"
+                            text_color: MUTED
+                            size_hint_y: None
+                            text_size: self.width, None
+                            height: self.texture_size[1]
+                        MDRaisedButton:
+                            text: "Save"
+                            size_hint: 1, None
+                            height: dp(48)
+                            font_size: "16sp"
+                            md_bg_color: PRIMARY
+                            disabled: app.loading
+                            on_release: app.save_profile()
+
+    MDScreen:
+        name: "password"
+        md_bg_color: BG
+        MDBoxLayout:
+            orientation: "vertical"
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(64)
+                md_bg_color: WHITE
+                padding: dp(4), dp(6), dp(12), dp(6)
+                spacing: dp(6)
+                MDIconButton:
+                    icon: "arrow-left"
+                    pos_hint: {"center_y": .5}
+                    theme_icon_color: "Custom"
+                    icon_color: INK
+                    on_release: app.back_to_settings()
+                MDLabel:
+                    text: "Change password"
+                    font_style: "H6"
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: INK
+                    size_hint_y: None
+                    text_size: self.width, None
+                    height: self.texture_size[1]
+                    pos_hint: {"center_y": .5}
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(1)
+                md_bg_color: LINE
+            ScrollView:
+                bar_width: 0
+                do_scroll_x: False
+                MDBoxLayout:
+                    orientation: "vertical"
+                    adaptive_height: True
+                    padding: dp(16), dp(22), dp(16), dp(30)
+                    spacing: dp(10)
+                    MDLabel:
+                        text: "Choose a new password with at least 6 characters."
+                        font_style: "Body2"
+                        theme_text_color: "Custom"
+                        text_color: MUTED
+                        size_hint_y: None
+                        text_size: self.width, None
+                        height: self.texture_size[1]
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        adaptive_height: True
+                        md_bg_color: WHITE
+                        radius: [dp(16)]
+                        padding: dp(14)
+                        spacing: dp(12)
+                        MDTextField:
+                            id: pw_new
+                            hint_text: "New password"
+                            mode: "rectangle"
+                            password: True
+                        MDTextField:
+                            id: pw_confirm
+                            hint_text: "Confirm new password"
+                            mode: "rectangle"
+                            password: True
+                            on_text_validate: app.change_password()
+                        MDRaisedButton:
+                            text: "Update password"
+                            size_hint: 1, None
+                            height: dp(48)
+                            font_size: "16sp"
+                            md_bg_color: PRIMARY
+                            disabled: app.loading
+                            on_release: app.change_password()
 
     MDScreen:
         name: "note"
@@ -1226,6 +1414,13 @@ class SwitchRow(MDBoxLayout):
     active = BooleanProperty(False)
 
 
+class MenuRow(ButtonBehavior, MDBoxLayout):
+    """A tappable settings row: icon, title, subtitle and a chevron."""
+    icon = StringProperty("")
+    title = StringProperty("")
+    subtitle = StringProperty("")
+
+
 class TapBox(ButtonBehavior, MDBoxLayout):
     """A plain tappable container."""
 
@@ -1370,6 +1565,9 @@ class ChatApp(MDApp):
         if key == 27 and self.root:
             if self.root.current == "chat":
                 self.back()
+                return True
+            if self.root.current in ("profile", "password"):
+                self.back_to_settings()
                 return True
             if self.root.current == "settings":
                 self.close_settings()
@@ -1636,12 +1834,23 @@ class ChatApp(MDApp):
     def open_settings(self):
         ids = self.root.ids
         self._profile_loading = True  # don't treat these programmatic changes as user taps
-        ids.name_field.text = self.me.get("display_name") or ""
         ids.active_row.active = self.me.get("show_active") is not False
         ids.rail_row.active = bool(self.prefs.get("rail", True))
         ids.preview_row.active = bool(self.prefs.get("previews", True))
-        ids.pw_new.text = ids.pw_confirm.text = ""
         self._profile_loading = False
+        self.root.current = "settings"
+
+    def open_profile(self):
+        self.root.ids.name_field.text = self.me.get("display_name") or ""
+        self.root.current = "profile"
+
+    def open_password(self):
+        self.root.ids.pw_new.text = self.root.ids.pw_confirm.text = ""
+        self.root.current = "password"
+
+    def back_to_settings(self):
+        for f in (self.root.ids.name_field, self.root.ids.pw_new, self.root.ids.pw_confirm):
+            f.focus = False
         self.root.current = "settings"
 
     def close_settings(self):
@@ -1659,7 +1868,7 @@ class ChatApp(MDApp):
             self.loading = False
             self.me["display_name"] = name or None
             self.set_me(self.me)
-            self.close_settings()
+            self.back_to_settings()
 
         self.bg(lambda: self.api.set_display_name(name), done)
 
@@ -1738,6 +1947,7 @@ class ChatApp(MDApp):
         def done(_):
             self.loading = False
             ids.pw_new.text = ids.pw_confirm.text = ""
+            self.back_to_settings()
             self.notify("Password updated.")
 
         self.bg(lambda: self.api.change_password(pw), done)
