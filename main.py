@@ -490,10 +490,6 @@ MDScreenManager:
                         id: name_field
                         hint_text: "Display name"
                         mode: "rectangle"
-                    MDTextField:
-                        id: note_field
-                        hint_text: "Note for friends (24 hours)"
-                        mode: "rectangle"
                     MDRaisedButton:
                         text: "Save"
                         size_hint: 1, None
@@ -539,6 +535,114 @@ MDScreenManager:
                         theme_text_color: "Custom"
                         text_color: (0.86, 0.2, 0.25, 1)
                         on_release: app.logout()
+
+    MDScreen:
+        name: "note"
+        md_bg_color: (0, 0, 0, 1)
+        MDBoxLayout:
+            orientation: "vertical"
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(68)
+                padding: dp(8), dp(10), dp(14), dp(10)
+                MDIconButton:
+                    icon: "close"
+                    pos_hint: {"center_y": .5}
+                    theme_icon_color: "Custom"
+                    icon_color: WHITE
+                    on_release: app.close_note()
+                MDLabel:
+                    text: "New note"
+                    halign: "center"
+                    font_style: "H6"
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: WHITE
+                TapBox:
+                    size_hint: None, None
+                    size: dp(88), dp(42)
+                    pos_hint: {"center_y": .5}
+                    on_release: app.share_note()
+                    PassCard:
+                        radius: [dp(21)]
+                        elevation: 0
+                        md_bg_color: PRIMARY if app.note_ready else (0.17, 0.17, 0.19, 1)
+                        MDLabel:
+                            text: "Share"
+                            text_size: self.size
+                            halign: "center"
+                            valign: "middle"
+                            bold: True
+                            font_style: "Subtitle1"
+                            theme_text_color: "Custom"
+                            text_color: WHITE if app.note_ready else (0.55, 0.56, 0.6, 1)
+            Widget:
+                size_hint_y: .5
+            MDFloatLayout:
+                size_hint: None, None
+                size: dp(290), dp(200)
+                pos_hint: {"center_x": .5}
+                AvatarDot:
+                    size: dp(104), dp(104)
+                    pos_hint: {"center_x": .5, "y": 0}
+                    initial: app.me_initial
+                    color: app.me_color
+                PassCard:
+                    size_hint: None, None
+                    size: dp(16), dp(16)
+                    pos_hint: {"x": .31, "y": .585}
+                    radius: [dp(8)]
+                    elevation: 0
+                    md_bg_color: (0.14, 0.14, 0.15, 1)
+                PassCard:
+                    size_hint: None, None
+                    size: dp(8), dp(8)
+                    pos_hint: {"x": .345, "y": .54}
+                    radius: [dp(4)]
+                    elevation: 0
+                    md_bg_color: (0.14, 0.14, 0.15, 1)
+                MDCard:
+                    size_hint: None, None
+                    size: dp(270), dp(46)
+                    pos_hint: {"center_x": .5, "y": .70}
+                    radius: [dp(23)]
+                    elevation: 0
+                    md_bg_color: (0.14, 0.14, 0.15, 1)
+                    padding: dp(18), 0
+                    TextInput:
+                        id: note_input
+                        hint_text: "Share a thought..."
+                        multiline: False
+                        text_validate_unfocus: False
+                        background_color: 0, 0, 0, 0
+                        background_normal: ""
+                        background_active: ""
+                        foreground_color: WHITE
+                        hint_text_color: (0.6, 0.62, 0.66, 1)
+                        cursor_color: PRIMARY
+                        font_size: "17sp"
+                        padding: [0, dp(13), 0, dp(13)]
+                        on_text: app.on_note_text(self)
+                        on_text_validate: app.share_note()
+            MDFlatButton:
+                text: "Delete note"
+                pos_hint: {"center_x": .5}
+                opacity: 1 if app.has_note else 0
+                disabled: not app.has_note
+                theme_text_color: "Custom"
+                text_color: (1, 0.35, 0.4, 1)
+                on_release: app.delete_note()
+            Widget:
+                size_hint_y: .9
+            MDLabel:
+                text: "Friends can see your note on Chatly for 24 hours."
+                halign: "center"
+                font_style: "Body2"
+                theme_text_color: "Custom"
+                text_color: (0.82, 0.83, 0.86, 1)
+                size_hint_y: None
+                text_size: self.width - dp(32), None
+                height: dp(64)
 
     MDScreen:
         name: "chat"
@@ -958,6 +1062,10 @@ class AvatarDot(MDFloatLayout):
     plus = BooleanProperty(False)
 
 
+class TapBox(ButtonBehavior, MDBoxLayout):
+    """A plain tappable container."""
+
+
 class StoryItem(ButtonBehavior, MDBoxLayout):
     """One avatar in the top 'active friends' rail."""
     name = StringProperty("")
@@ -991,6 +1099,8 @@ class ChatApp(MDApp):
     me_username = StringProperty("")
     me_initial = StringProperty("?")
     me_color = ListProperty([0, 0.52, 1, 1])
+    note_ready = BooleanProperty(False)
+    has_note = BooleanProperty(False)
 
     def build(self):
         self.title = "Chatly"
@@ -1094,6 +1204,9 @@ class ChatApp(MDApp):
                 return True
             if self.root.current == "profile":
                 self.close_profile()
+                return True
+            if self.root.current == "note":
+                self.close_note()
                 return True
         return False
 
@@ -1289,7 +1402,7 @@ class ChatApp(MDApp):
         rail.add_widget(StoryItem(
             name="Your note", initial=self.me_initial, color=self.me_color,
             note=short(mine, 14) if mine else "What's up?", placeholder=not mine, plus=True,
-            on_release=lambda x: self.open_profile(True)))
+            on_release=lambda x: self.open_note()))
         people = []
         for u in self.users:
             sec = u.get("seconds_ago")
@@ -1350,46 +1463,85 @@ class ChatApp(MDApp):
         self.refresh_contacts()
 
     # ---------- profile ----------
-    def open_profile(self, focus_note=False):
+    def open_profile(self):
         ids = self.root.ids
         self._profile_loading = True
         ids.name_field.text = self.me.get("display_name") or ""
-        ids.note_field.text = self.me.get("note") or ""
         ids.active_switch.active = self.me.get("show_active") is not False
         self._profile_loading = False
         self.root.current = "profile"
-        if focus_note:
-            Clock.schedule_once(lambda dt: setattr(ids.note_field, "focus", True), 0.4)
 
     def close_profile(self):
         self.root.current = "contacts"
         self.refresh_contacts()
 
     def save_profile(self):
-        ids = self.root.ids
-        name, note = ids.name_field.text.strip(), ids.note_field.text.strip()
+        name = self.root.ids.name_field.text.strip()
         if len(name) > 40:
             self.notify("Display name can be up to 40 characters")
             return
-        if len(note) > 60:
-            self.notify("Notes can be up to 60 characters")
-            return
-        old_note = self.me.get("note") or ""
         self.loading = True
-
-        def work():
-            self.api.set_display_name(name)
-            if note != old_note:
-                self.api.set_note(note)  # needs supabase/update_v3.sql
 
         def done(_):
             self.loading = False
             self.me["display_name"] = name or None
-            self.me["note"] = note or None
             self.set_me(self.me)
             self.close_profile()
 
-        self.bg(work, done)
+        self.bg(lambda: self.api.set_display_name(name), done)
+
+    # ---------- notes (Messenger-style composer) ----------
+    def open_note(self):
+        ids = self.root.ids
+        current = self.me.get("note") or ""
+        ids.note_input.text = current
+        self.has_note = bool(current)
+        self.note_ready = False  # nothing new to share yet
+        self.root.current = "note"
+        Clock.schedule_once(lambda dt: setattr(ids.note_input, "focus", True), 0.35)
+
+    def close_note(self):
+        self.root.ids.note_input.focus = False
+        self.root.current = "contacts"
+        self.refresh_contacts()
+
+    def on_note_text(self, widget):
+        text = widget.text
+        if len(text) > 60:
+            widget.text = text[:60]  # notes are limited to 60 characters
+            return
+        t = text.strip()
+        self.note_ready = bool(t) and t != (self.me.get("note") or "")
+
+    def share_note(self):
+        text = self.root.ids.note_input.text.strip()
+        if not text or not self.note_ready:
+            return
+        self.loading = True
+
+        def done(_):
+            self.loading = False
+            self.me["note"] = text
+            self.close_note()
+
+        self.bg(lambda: self.api.set_note(text), done, self.note_fail)
+
+    def delete_note(self):
+        self.loading = True
+
+        def done(_):
+            self.loading = False
+            self.me["note"] = None
+            self.close_note()
+
+        self.bg(lambda: self.api.set_note(""), done, self.note_fail)
+
+    def note_fail(self, e):
+        self.loading = False
+        msg = str(e)
+        if "set_note" in msg or "schema cache" in msg:
+            msg = "Notes are not set up in your Supabase project yet. Run update_v3.sql in the SQL Editor."
+        self.notify(msg[:200])
 
     def set_show_active(self, flag):
         if self._profile_loading or not self.api.uid:
