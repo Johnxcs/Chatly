@@ -26,3 +26,7 @@ friends who are active, but notes are off.
 
 ## Settings: delete account
 Run `supabase/update_v4.sql` once to enable Settings -> Delete account. Everything else in Settings works without it.
+
+## Home feed (Facebook Lite style) + unique features
+Run `supabase/update_v5.sql` once to enable posts, vibes, vanishing posts and likes.
+Without it, chats still work and Home shows a message asking you to run the update.

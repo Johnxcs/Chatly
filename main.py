@@ -3,7 +3,7 @@ import re
 import sqlite3
 import threading
 import time
-from datetime import datetime
+from datetime import date, datetime
 
 import certifi
 import requests
@@ -28,7 +28,8 @@ from kivymd.uix.dialog import MDDialog
 import config
 
 KV = """
-#:set PRIMARY (0.0, 0.52, 1.0, 1)
+#:import NoTransition kivy.uix.screenmanager.NoTransition
+#:set PRIMARY (0.094, 0.467, 0.949, 1)
 #:set BG (0.955, 0.965, 0.985, 1)
 #:set WHITE (1, 1, 1, 1)
 #:set INK (0.09, 0.10, 0.14, 1)
@@ -235,6 +236,239 @@ KV = """
         theme_text_color: "Custom"
         text_color: MUTED
 
+<TopBar>:
+    size_hint_y: None
+    height: dp(56)
+    md_bg_color: PRIMARY
+    padding: dp(16), 0, dp(4), 0
+    Label:
+        text: "chatly"
+        font_size: "30sp"
+        bold: True
+        color: WHITE
+        halign: "left"
+        valign: "middle"
+        text_size: self.size
+    MDIconButton:
+        icon: "magnify"
+        pos_hint: {"center_y": .5}
+        theme_icon_color: "Custom"
+        icon_color: WHITE
+        on_release: app.open_search()
+    MDIconButton:
+        icon: "message-text-outline"
+        pos_hint: {"center_y": .5}
+        theme_icon_color: "Custom"
+        icon_color: WHITE
+        on_release: app.go_tab("contacts")
+
+<TabItem>:
+    MDIcon:
+        icon: root.icon
+        size_hint: None, None
+        size: dp(28), dp(28)
+        pos_hint: {"center_x": .5, "center_y": .55}
+        theme_text_color: "Custom"
+        text_color: PRIMARY if root.active else MUTED
+    MDBoxLayout:
+        size_hint: 1, None
+        height: dp(3)
+        pos_hint: {"x": 0, "y": 0}
+        md_bg_color: PRIMARY if root.active else (0, 0, 0, 0)
+    PassCard:
+        size_hint: None, None
+        size: dp(18), dp(18)
+        pos_hint: {"center_x": .64, "center_y": .76}
+        radius: [dp(9)]
+        elevation: 0
+        md_bg_color: (0.9, 0.2, 0.25, 1)
+        opacity: 1 if root.badge > 0 else 0
+        Label:
+            text: str(root.badge) if root.badge < 10 else "9+"
+            font_size: "10sp"
+            bold: True
+            color: WHITE
+            text_size: self.size
+            halign: "center"
+            valign: "middle"
+
+<TabBar>:
+    size_hint_y: None
+    height: dp(50)
+    md_bg_color: WHITE
+    TabItem:
+        icon: "home-variant" if root.current == "feed" else "home-variant-outline"
+        active: root.current == "feed"
+        on_release: app.go_tab("feed")
+    TabItem:
+        icon: "message-text" if root.current == "contacts" else "message-text-outline"
+        active: root.current == "contacts"
+        badge: app.unread_total
+        on_release: app.go_tab("contacts")
+    TabItem:
+        icon: "account-group" if root.current == "people" else "account-group-outline"
+        active: root.current == "people"
+        on_release: app.go_tab("people")
+    TabItem:
+        icon: "menu"
+        active: root.current == "settings"
+        on_release: app.go_tab("settings")
+
+<Chip>:
+    size_hint: None, None
+    height: dp(34)
+    width: cl.texture_size[0] + dp(28)
+    PassCard:
+        radius: [dp(17)]
+        elevation: 0
+        md_bg_color: root.accent if root.selected else (0.91, 0.92, 0.94, 1)
+        padding: dp(14), 0
+        Label:
+            id: cl
+            text: root.text
+            font_size: "13sp"
+            bold: True
+            color: WHITE if root.selected else INK
+            size_hint: None, None
+            size: self.texture_size
+            pos_hint: {"center_y": .5}
+
+<PostCard>:
+    orientation: "vertical"
+    adaptive_height: True
+    md_bg_color: WHITE
+    padding: dp(14), dp(12), dp(14), dp(2)
+    spacing: dp(8)
+    MDBoxLayout:
+        size_hint_y: None
+        height: dp(46)
+        spacing: dp(10)
+        AvatarDot:
+            size: dp(42), dp(42)
+            pos_hint: {"center_y": .5}
+            initial: root.initial
+            color: root.color
+        MDBoxLayout:
+            orientation: "vertical"
+            adaptive_height: True
+            pos_hint: {"center_y": .5}
+            MDLabel:
+                text: root.name
+                font_style: "Subtitle1"
+                bold: True
+                theme_text_color: "Custom"
+                text_color: INK
+                size_hint_y: None
+                text_size: self.width, None
+                height: self.texture_size[1]
+            MDLabel:
+                text: root.meta
+                font_style: "Caption"
+                theme_text_color: "Custom"
+                text_color: MUTED
+                size_hint_y: None
+                text_size: self.width, None
+                height: self.texture_size[1]
+        MDIconButton:
+            icon: "delete-outline"
+            pos_hint: {"center_y": .5}
+            opacity: 1 if root.mine else 0
+            disabled: not root.mine
+            theme_icon_color: "Custom"
+            icon_color: MUTED
+            on_release: app.confirm_delete_post(root)
+    MDLabel:
+        text: root.prompt
+        font_style: "Caption"
+        theme_text_color: "Custom"
+        text_color: PRIMARY
+        size_hint_y: None
+        text_size: self.width, None
+        height: self.texture_size[1] if self.text else 0
+        opacity: 1 if self.text else 0
+    MDLabel:
+        text: root.body
+        font_style: "Body1"
+        theme_text_color: "Custom"
+        text_color: INK
+        size_hint_y: None
+        text_size: self.width, None
+        height: self.texture_size[1]
+    MDBoxLayout:
+        size_hint_y: None
+        height: dp(26) if root.vibe else 0
+        opacity: 1 if root.vibe else 0
+        PassCard:
+            size_hint: None, None
+            size: vl.texture_size[0] + dp(22), dp(24)
+            pos_hint: {"center_y": .5}
+            radius: [dp(12)]
+            elevation: 0
+            md_bg_color: root.vibe_color
+            padding: dp(11), 0
+            Label:
+                id: vl
+                text: root.vibe
+                font_size: "12sp"
+                bold: True
+                color: WHITE
+                size_hint: None, None
+                size: self.texture_size
+                pos_hint: {"center_y": .5}
+    MDLabel:
+        text: (str(root.likes) + (" like" if root.likes == 1 else " likes")) if root.likes else ""
+        font_style: "Caption"
+        theme_text_color: "Custom"
+        text_color: MUTED
+        size_hint_y: None
+        text_size: self.width, None
+        height: self.texture_size[1] if self.text else 0
+    MDBoxLayout:
+        size_hint_y: None
+        height: dp(1)
+        md_bg_color: LINE
+    MDBoxLayout:
+        size_hint_y: None
+        height: dp(44)
+        TapBox:
+            on_release: app.toggle_like(root)
+            Widget:
+            MDIcon:
+                icon: "thumb-up" if root.liked else "thumb-up-outline"
+                size_hint: None, None
+                size: dp(22), dp(22)
+                pos_hint: {"center_y": .5}
+                theme_text_color: "Custom"
+                text_color: PRIMARY if root.liked else MUTED
+            Label:
+                text: "  Like"
+                font_size: "14sp"
+                bold: True
+                color: PRIMARY if root.liked else MUTED
+                size_hint_x: None
+                width: self.texture_size[0]
+            Widget:
+        TapBox:
+            disabled: root.mine
+            opacity: 0 if root.mine else 1
+            on_release: app.reply_to_post(root)
+            Widget:
+            MDIcon:
+                icon: "message-text-outline"
+                size_hint: None, None
+                size: dp(22), dp(22)
+                pos_hint: {"center_y": .5}
+                theme_text_color: "Custom"
+                text_color: MUTED
+            Label:
+                text: "  Reply privately"
+                font_size: "14sp"
+                bold: True
+                color: MUTED
+                size_hint_x: None
+                width: self.texture_size[0]
+            Widget:
+
 <Bubble>:
     orientation: "horizontal"
     adaptive_height: True
@@ -335,6 +569,7 @@ KV = """
             text_color: WHITE
 
 MDScreenManager:
+    transition: NoTransition()
 
     MDScreen:
         name: "login"
@@ -433,39 +668,155 @@ MDScreenManager:
                             on_release: app.toggle_mode()
 
     MDScreen:
+        name: "feed"
+        md_bg_color: BG
+        MDBoxLayout:
+            orientation: "vertical"
+            TopBar:
+            TabBar:
+                current: "feed"
+            ScrollView:
+                bar_width: 0
+                do_scroll_x: False
+                MDBoxLayout:
+                    orientation: "vertical"
+                    adaptive_height: True
+                    spacing: dp(8)
+                    MDBoxLayout:
+                        size_hint_y: None
+                        height: dp(66)
+                        md_bg_color: WHITE
+                        padding: dp(12), dp(10)
+                        spacing: dp(10)
+                        AvatarDot:
+                            size: dp(42), dp(42)
+                            pos_hint: {"center_y": .5}
+                            initial: app.me_initial
+                            color: app.me_color
+                        TapBox:
+                            on_release: app.open_compose()
+                            PassCard:
+                                radius: [dp(21)]
+                                elevation: 0
+                                md_bg_color: (0.94, 0.945, 0.955, 1)
+                                padding: dp(16), 0
+                                Label:
+                                    text: "What's on your mind?"
+                                    font_size: "15sp"
+                                    color: MUTED
+                                    size_hint: None, None
+                                    size: self.texture_size
+                                    pos_hint: {"center_y": .5}
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        adaptive_height: True
+                        md_bg_color: WHITE
+                        padding: dp(14), dp(12)
+                        spacing: dp(6)
+                        SectionLabel:
+                            text: "QUESTION OF THE DAY"
+                        MDLabel:
+                            text: app.prompt_text
+                            font_style: "Subtitle1"
+                            bold: True
+                            theme_text_color: "Custom"
+                            text_color: INK
+                            size_hint_y: None
+                            text_size: self.width, None
+                            height: self.texture_size[1]
+                        TapBox:
+                            size_hint: None, None
+                            size: dp(110), dp(36)
+                            on_release: app.answer_prompt()
+                            PassCard:
+                                radius: [dp(18)]
+                                elevation: 0
+                                md_bg_color: PRIMARY
+                                Label:
+                                    text: "Answer"
+                                    font_size: "14sp"
+                                    bold: True
+                                    color: WHITE
+                                    text_size: self.size
+                                    halign: "center"
+                                    valign: "middle"
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        adaptive_height: True
+                        md_bg_color: WHITE
+                        ScrollView:
+                            id: rail_sv
+                            size_hint_y: None
+                            height: dp(126)
+                            bar_width: 0
+                            do_scroll_y: False
+                            MDBoxLayout:
+                                id: rail
+                                orientation: "horizontal"
+                                adaptive_width: True
+                                size_hint_y: None
+                                height: dp(126)
+                                padding: dp(10), 0
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        adaptive_height: True
+                        md_bg_color: WHITE
+                        padding: dp(12), dp(10)
+                        ScrollView:
+                            size_hint_y: None
+                            height: dp(34)
+                            bar_width: 0
+                            do_scroll_y: False
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                adaptive_width: True
+                                size_hint_y: None
+                                height: dp(34)
+                                padding: dp(0), 0
+                                spacing: dp(8)
+                                Chip:
+                                    text: "All"
+                                    selected: app.vibe_filter == ""
+                                    on_release: app.set_vibe_filter("")
+                                Chip:
+                                    text: "Chill"
+                                    selected: app.vibe_filter == "chill"
+                                    on_release: app.set_vibe_filter("chill")
+                                    accent: (0.13, 0.70, 0.56, 1)
+                                Chip:
+                                    text: "Hyped"
+                                    selected: app.vibe_filter == "hyped"
+                                    on_release: app.set_vibe_filter("hyped")
+                                    accent: (0.98, 0.58, 0.16, 1)
+                                Chip:
+                                    text: "Focused"
+                                    selected: app.vibe_filter == "focused"
+                                    on_release: app.set_vibe_filter("focused")
+                                    accent: (0.40, 0.45, 0.90, 1)
+                                Chip:
+                                    text: "Grateful"
+                                    selected: app.vibe_filter == "grateful"
+                                    on_release: app.set_vibe_filter("grateful")
+                                    accent: (0.96, 0.36, 0.52, 1)
+                                Chip:
+                                    text: "Sleepy"
+                                    selected: app.vibe_filter == "sleepy"
+                                    on_release: app.set_vibe_filter("sleepy")
+                                    accent: (0.45, 0.55, 0.65, 1)
+                    MDBoxLayout:
+                        id: feed_list
+                        orientation: "vertical"
+                        adaptive_height: True
+                        spacing: dp(8)
+
+    MDScreen:
         name: "contacts"
         md_bg_color: WHITE
         MDBoxLayout:
             orientation: "vertical"
-            MDBoxLayout:
-                size_hint_y: None
-                height: dp(76)
-                padding: dp(22), dp(14), dp(8), dp(6)
-                MDBoxLayout:
-                    orientation: "vertical"
-                    adaptive_height: True
-                    pos_hint: {"center_y": .5}
-                    MDLabel:
-                        text: "Chats"
-                        font_style: "H5"
-                        bold: True
-                        theme_text_color: "Custom"
-                        text_color: INK
-                        size_hint_y: None
-                        height: dp(34)
-                    MDLabel:
-                        text: "Signed in as " + app.me_name
-                        font_style: "Caption"
-                        theme_text_color: "Custom"
-                        text_color: MUTED
-                        size_hint_y: None
-                        height: dp(18)
-                MDIconButton:
-                    icon: "cog-outline"
-                    pos_hint: {"center_y": .5}
-                    theme_icon_color: "Custom"
-                    icon_color: PRIMARY
-                    on_release: app.open_settings()
+            TopBar:
+            TabBar:
+                current: "contacts"
             MDBoxLayout:
                 size_hint_y: None
                 height: dp(60)
@@ -497,22 +848,54 @@ MDScreenManager:
                         padding: [0, dp(12), 0, dp(12)]
                         on_text: app.refresh_contacts()
             ScrollView:
-                id: rail_sv
-                size_hint_y: None
-                height: dp(126)
-                bar_width: 0
-                do_scroll_y: False
-                MDBoxLayout:
-                    id: rail
-                    orientation: "horizontal"
-                    adaptive_width: True
-                    size_hint_y: None
-                    height: dp(126)
-                    padding: dp(10), 0
-            ScrollView:
                 bar_width: 0
                 MDBoxLayout:
                     id: contact_list
+                    orientation: "vertical"
+                    adaptive_height: True
+
+    MDScreen:
+        name: "people"
+        md_bg_color: WHITE
+        MDBoxLayout:
+            orientation: "vertical"
+            TopBar:
+            TabBar:
+                current: "people"
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(60)
+                padding: dp(16), dp(6)
+                MDCard:
+                    radius: [dp(22)]
+                    elevation: 0
+                    md_bg_color: (0.94, 0.95, 0.97, 1)
+                    padding: dp(14), 0
+                    spacing: dp(8)
+                    MDIcon:
+                        icon: "magnify"
+                        size_hint: None, None
+                        size: dp(24), dp(24)
+                        pos_hint: {"center_y": .5}
+                        theme_text_color: "Custom"
+                        text_color: MUTED
+                    TextInput:
+                        id: people_search
+                        hint_text: "Search people"
+                        multiline: False
+                        background_color: 0, 0, 0, 0
+                        background_normal: ""
+                        background_active: ""
+                        foreground_color: INK
+                        hint_text_color: MUTED
+                        cursor_color: PRIMARY
+                        font_size: "16sp"
+                        padding: [0, dp(12), 0, dp(12)]
+                        on_text: app.refresh_people()
+            ScrollView:
+                bar_width: 0
+                MDBoxLayout:
+                    id: people_list
                     orientation: "vertical"
                     adaptive_height: True
 
@@ -521,32 +904,9 @@ MDScreenManager:
         md_bg_color: BG
         MDBoxLayout:
             orientation: "vertical"
-            MDBoxLayout:
-                size_hint_y: None
-                height: dp(64)
-                md_bg_color: WHITE
-                padding: dp(4), dp(6), dp(12), dp(6)
-                spacing: dp(6)
-                MDIconButton:
-                    icon: "arrow-left"
-                    pos_hint: {"center_y": .5}
-                    theme_icon_color: "Custom"
-                    icon_color: INK
-                    on_release: app.close_settings()
-                MDLabel:
-                    text: "Settings"
-                    font_style: "H6"
-                    bold: True
-                    theme_text_color: "Custom"
-                    text_color: INK
-                    size_hint_y: None
-                    text_size: self.width, None
-                    height: self.texture_size[1]
-                    pos_hint: {"center_y": .5}
-            MDBoxLayout:
-                size_hint_y: None
-                height: dp(1)
-                md_bg_color: LINE
+            TopBar:
+            TabBar:
+                current: "settings"
             ScrollView:
                 bar_width: 0
                 do_scroll_x: False
@@ -865,6 +1225,178 @@ MDScreenManager:
                             on_release: app.change_password()
 
     MDScreen:
+        name: "compose"
+        md_bg_color: WHITE
+        MDBoxLayout:
+            orientation: "vertical"
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(64)
+                padding: dp(8), dp(10), dp(14), dp(10)
+                MDIconButton:
+                    icon: "close"
+                    pos_hint: {"center_y": .5}
+                    theme_icon_color: "Custom"
+                    icon_color: INK
+                    on_release: app.close_compose()
+                MDLabel:
+                    text: "Create post"
+                    halign: "center"
+                    font_style: "H6"
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: INK
+                TapBox:
+                    size_hint: None, None
+                    size: dp(76), dp(40)
+                    pos_hint: {"center_y": .5}
+                    on_release: app.share_post()
+                    PassCard:
+                        radius: [dp(20)]
+                        elevation: 0
+                        md_bg_color: PRIMARY if app.post_ready else (0.9, 0.91, 0.93, 1)
+                        Label:
+                            text: "Post"
+                            font_size: "15sp"
+                            bold: True
+                            color: WHITE if app.post_ready else (0.6, 0.62, 0.66, 1)
+                            text_size: self.size
+                            halign: "center"
+                            valign: "middle"
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(1)
+                md_bg_color: LINE
+            ScrollView:
+                bar_width: 0
+                do_scroll_x: False
+                MDBoxLayout:
+                    orientation: "vertical"
+                    adaptive_height: True
+                    padding: dp(14)
+                    spacing: dp(12)
+                    MDBoxLayout:
+                        size_hint_y: None
+                        height: dp(48)
+                        spacing: dp(10)
+                        AvatarDot:
+                            size: dp(42), dp(42)
+                            pos_hint: {"center_y": .5}
+                            initial: app.me_initial
+                            color: app.me_color
+                        MDLabel:
+                            text: app.me_name
+                            font_style: "Subtitle1"
+                            bold: True
+                            theme_text_color: "Custom"
+                            text_color: INK
+                            size_hint_y: None
+                            text_size: self.width, None
+                            height: self.texture_size[1]
+                            pos_hint: {"center_y": .5}
+                    MDLabel:
+                        text: ("Question of the day: " + app.post_prompt) if app.post_prompt else ""
+                        font_style: "Body2"
+                        theme_text_color: "Custom"
+                        text_color: PRIMARY
+                        size_hint_y: None
+                        text_size: self.width, None
+                        height: self.texture_size[1] if self.text else 0
+                    TextInput:
+                        id: post_input
+                        hint_text: "What's on your mind?"
+                        multiline: True
+                        size_hint_y: None
+                        height: dp(170)
+                        background_color: 0, 0, 0, 0
+                        background_normal: ""
+                        background_active: ""
+                        foreground_color: INK
+                        hint_text_color: MUTED
+                        cursor_color: PRIMARY
+                        font_size: "18sp"
+                        padding: [0, dp(6), 0, dp(6)]
+                        on_text: app.on_post_text(self)
+                    MDLabel:
+                        text: app.post_chars
+                        halign: "right"
+                        font_style: "Caption"
+                        theme_text_color: "Custom"
+                        text_color: MUTED
+                        size_hint_y: None
+                        text_size: self.width, None
+                        height: self.texture_size[1]
+                    SectionLabel:
+                        text: "VIBE"
+                    ScrollView:
+                        size_hint_y: None
+                        height: dp(34)
+                        bar_width: 0
+                        do_scroll_y: False
+                        MDBoxLayout:
+                            orientation: "horizontal"
+                            adaptive_width: True
+                            size_hint_y: None
+                            height: dp(34)
+                            padding: dp(0), 0
+                            spacing: dp(8)
+                            Chip:
+                                text: "Chill"
+                                selected: app.post_vibe == "chill"
+                                on_release: app.set_post_vibe("chill")
+                                accent: (0.13, 0.70, 0.56, 1)
+                            Chip:
+                                text: "Hyped"
+                                selected: app.post_vibe == "hyped"
+                                on_release: app.set_post_vibe("hyped")
+                                accent: (0.98, 0.58, 0.16, 1)
+                            Chip:
+                                text: "Focused"
+                                selected: app.post_vibe == "focused"
+                                on_release: app.set_post_vibe("focused")
+                                accent: (0.40, 0.45, 0.90, 1)
+                            Chip:
+                                text: "Grateful"
+                                selected: app.post_vibe == "grateful"
+                                on_release: app.set_post_vibe("grateful")
+                                accent: (0.96, 0.36, 0.52, 1)
+                            Chip:
+                                text: "Sleepy"
+                                selected: app.post_vibe == "sleepy"
+                                on_release: app.set_post_vibe("sleepy")
+                                accent: (0.45, 0.55, 0.65, 1)
+                    SectionLabel:
+                        text: "VANISHES AFTER"
+                    ScrollView:
+                        size_hint_y: None
+                        height: dp(34)
+                        bar_width: 0
+                        do_scroll_y: False
+                        MDBoxLayout:
+                            orientation: "horizontal"
+                            adaptive_width: True
+                            size_hint_y: None
+                            height: dp(34)
+                            padding: dp(0), 0
+                            spacing: dp(8)
+                            Chip:
+                                text: "1 hour"
+                                selected: app.post_hours == 1
+                                on_release: app.set_post_hours(1)
+                            Chip:
+                                text: "24 hours"
+                                selected: app.post_hours == 24
+                                on_release: app.set_post_hours(24)
+                            Chip:
+                                text: "7 days"
+                                selected: app.post_hours == 168
+                                on_release: app.set_post_hours(168)
+                            Chip:
+                                text: "Never"
+                                selected: app.post_hours == 0
+                                on_release: app.set_post_hours(0)
+
+    MDScreen:
         name: "note"
         md_bg_color: (0, 0, 0, 1)
         MDBoxLayout:
@@ -1128,6 +1660,61 @@ def badge_text(sec):
     return f"{h}h" if h < 24 else ""
 
 
+VIBES = [
+    ("chill", "Chill", (0.13, 0.70, 0.56, 1)),
+    ("hyped", "Hyped", (0.98, 0.58, 0.16, 1)),
+    ("focused", "Focused", (0.40, 0.45, 0.90, 1)),
+    ("grateful", "Grateful", (0.96, 0.36, 0.52, 1)),
+    ("sleepy", "Sleepy", (0.45, 0.55, 0.65, 1)),
+]
+VIBE_BY_KEY = {k: (label, list(color)) for k, label, color in VIBES}
+
+PROMPTS = [
+    "What made you smile today?", "What is one small win you had this week?",
+    "What song is stuck in your head right now?", "Describe your day in three words.",
+    "What is the best thing you ate recently?", "Who made your day better lately?",
+    "What are you looking forward to this weekend?", "What is something new you learned recently?",
+    "What would you do with a free day tomorrow?", "What is your go-to comfort food?",
+    "What is a place you want to visit someday?", "What habit are you trying to build?",
+    "What is the best advice you ever got?", "What is on your playlist this week?",
+    "What is a hobby you would love to pick up?", "What is one thing you are grateful for today?",
+    "Which movie could you watch again and again?", "What is your favorite way to relax?",
+    "What is a skill you wish you had?", "What was the highlight of your morning?",
+    "If today had a theme song, what would it be?", "What is a tiny thing that always cheers you up?",
+    "What is your favorite memory from this year?", "What would your perfect rainy day look like?",
+    "What is something you are proud of?", "Which app can you not live without?",
+    "What is the kindest thing someone did for you lately?", "What is your dream job for one day?",
+    "What do you do when you cannot sleep?", "What is a goal you are working on right now?",
+    "What is a food you could eat every day?",
+]
+
+
+def today_prompt():
+    return PROMPTS[date.today().toordinal() % len(PROMPTS)]
+
+
+def age_text(sec):
+    if sec is None:
+        return ""
+    if sec < 60:
+        return "Just now"
+    m = int(sec // 60)
+    if m < 60:
+        return f"{m}m"
+    h = m // 60
+    return f"{h}h" if h < 24 else f"{h // 24}d"
+
+
+def expiry_text(sec):
+    if sec is None or sec <= 0:
+        return ""
+    m = int(sec // 60)
+    if m < 60:
+        return f"Vanishes in {max(m, 1)}m"
+    h = m // 60
+    return f"Vanishes in {h}h" if h < 24 else f"Vanishes in {h // 24}d"
+
+
 class Supa:
     """Minimal Supabase client (Auth + PostgREST) using plain HTTPS requests."""
 
@@ -1237,6 +1824,21 @@ class Supa:
 
     def delete_account(self):
         self._req("POST", "/rest/v1/rpc/delete_my_account", json={})
+
+    def feed(self, vibe=""):
+        return self._req("POST", "/rest/v1/rpc/get_feed", json={"p_vibe": vibe or None, "p_limit": 40}) or []
+
+    def create_post(self, body, vibe, prompt, hours):
+        self._req("POST", "/rest/v1/rpc/create_post",
+                  json={"p_body": body, "p_vibe": vibe or None, "p_prompt": prompt or None,
+                        "p_hours": int(hours) or None})
+
+    def toggle_like(self, post_id):
+        rows = self._req("POST", "/rest/v1/rpc/toggle_like", json={"p_post": post_id})
+        return rows[0] if rows else {}
+
+    def delete_post(self, post_id):
+        self._req("DELETE", "/rest/v1/posts", params={"id": f"eq.{post_id}"})
 
     def set_note(self, text):
         self._req("POST", "/rest/v1/rpc/set_note", json={"p_note": text})
@@ -1414,6 +2016,44 @@ class SwitchRow(MDBoxLayout):
     active = BooleanProperty(False)
 
 
+class TopBar(MDBoxLayout):
+    """Blue Facebook-Lite-style bar with the app name and quick icons."""
+
+
+class TabBar(MDBoxLayout):
+    """Icon tab row under the top bar (Home, Chats, People, Menu)."""
+    current = StringProperty("")
+
+
+class TabItem(ButtonBehavior, MDFloatLayout):
+    icon = StringProperty("")
+    active = BooleanProperty(False)
+    badge = NumericProperty(0)
+
+
+class Chip(ButtonBehavior, MDBoxLayout):
+    """Pill-shaped choice (vibes, durations, filters)."""
+    text = StringProperty("")
+    selected = BooleanProperty(False)
+    accent = ListProperty([0.094, 0.467, 0.949, 1])
+
+
+class PostCard(MDBoxLayout):
+    pid = NumericProperty(0)
+    author_id = StringProperty("")
+    name = StringProperty("")
+    initial = StringProperty("?")
+    color = ListProperty([0, 0.52, 1, 1])
+    meta = StringProperty("")
+    prompt = StringProperty("")
+    body = StringProperty("")
+    vibe = StringProperty("")
+    vibe_color = ListProperty([0.5, 0.5, 0.5, 1])
+    likes = NumericProperty(0)
+    liked = BooleanProperty(False)
+    mine = BooleanProperty(False)
+
+
 class MenuRow(ButtonBehavior, MDBoxLayout):
     """A tappable settings row: icon, title, subtitle and a chevron."""
     icon = StringProperty("")
@@ -1461,6 +2101,14 @@ class ChatApp(MDApp):
     me_color = ListProperty([0, 0.52, 1, 1])
     note_ready = BooleanProperty(False)
     has_note = BooleanProperty(False)
+    unread_total = NumericProperty(0)
+    vibe_filter = StringProperty("")
+    post_vibe = StringProperty("")
+    post_hours = NumericProperty(24)
+    post_prompt = StringProperty("")
+    post_ready = BooleanProperty(False)
+    post_chars = StringProperty("0/500")
+    prompt_text = StringProperty("")
 
     def build(self):
         self.title = "Chatly"
@@ -1481,6 +2129,8 @@ class ChatApp(MDApp):
         self.prefs = {"previews": True, "rail": True}
         if self.store.exists("prefs"):
             self.prefs.update(self.store.get("prefs"))
+        self.feed_req, self.feed_loaded, self.chat_from = 0, False, "feed"
+        self.prompt_text = today_prompt()
         Window.softinput_mode = "below_target"
         Window.bind(on_keyboard=self._on_key)
         return Builder.load_string(KV)
@@ -1561,19 +2211,23 @@ class ChatApp(MDApp):
         self.heartbeat(0)
 
     def _on_key(self, window, key, *args):
-        """Android back button: go back a screen instead of closing the app."""
+        """Android back button: go back one screen; from a tab go Home; from Home leave the app."""
         if key == 27 and self.root:
-            if self.root.current == "chat":
+            cur = self.root.current
+            if cur == "chat":
                 self.back()
                 return True
-            if self.root.current in ("profile", "password"):
+            if cur in ("profile", "password"):
                 self.back_to_settings()
                 return True
-            if self.root.current == "settings":
-                self.close_settings()
-                return True
-            if self.root.current == "note":
+            if cur == "note":
                 self.close_note()
+                return True
+            if cur == "compose":
+                self.close_compose()
+                return True
+            if cur in ("contacts", "people", "settings"):
+                self.go_tab("feed")
                 return True
         return False
 
@@ -1658,7 +2312,8 @@ class ChatApp(MDApp):
             self.set_me(me)
             self.loading = False
             self.refresh_contacts()
-            self.root.current = "contacts"
+            self.root.current = "feed"
+            self.refresh_feed()
 
         self.bg(init, done)
 
@@ -1682,6 +2337,8 @@ class ChatApp(MDApp):
             return
         self.poll_busy = True
         self.tick += 1
+        if self.tick % 12 == 0 and self.root.current == "feed":
+            self.refresh_feed(silent=True)  # keep Home fresh (about every 30 seconds)
 
         local = self.local
 
@@ -1717,7 +2374,8 @@ class ChatApp(MDApp):
                 else:
                     self.unread[peer] = self.unread.get(peer, 0) + 1
                     changed = True
-            if changed and self.root.current == "contacts":
+            self.unread_total = sum(self.unread.values())
+            if changed and self.root.current in ("contacts", "people", "feed"):
                 self.refresh_contacts()
 
         def fail(e):
@@ -1729,6 +2387,7 @@ class ChatApp(MDApp):
     def refresh_contacts(self):
         if not self.root:
             return
+        self.unread_total = sum(self.unread.values())
         q = self.root.ids.search_field.text.strip().lower()
         lst = self.root.ids.contact_list
         lst.clear_widgets()
@@ -1757,10 +2416,11 @@ class ChatApp(MDApp):
                 text="No matches" if q else "No one else has joined yet.\nInvite a friend to create an account!",
                 halign="center", theme_text_color="Hint", size_hint_y=None, height=dp(140)))
         sv = self.root.ids.rail_sv
-        hide = bool(q) or not self.prefs.get("rail", True)  # hidden while searching or if turned off
+        hide = not self.prefs.get("rail", True)  # the notes strip now lives on Home
         sv.height, sv.opacity = (0, 0) if hide else (dp(126), 1)
         if not hide:
             self.refresh_rail()
+        self.refresh_people()
 
     def refresh_rail(self):
         """Top strip: your note, then friends who are online / recently active or have a note."""
@@ -1787,8 +2447,11 @@ class ChatApp(MDApp):
 
     # ---------- chat ----------
     def open_chat(self, uid, name):
+        if self.root.current in ("feed", "contacts", "people"):
+            self.chat_from = self.root.current
         self.peer = uid
         self.unread.pop(uid, None)
+        self.unread_total = sum(self.unread.values())
         u = self.user_by_id(uid)
         self.peer_name, self.peer_initial = name, initial(name)
         self.peer_color = avatar_color(u["username"] if u else name)
@@ -1827,8 +2490,10 @@ class ChatApp(MDApp):
 
     def back(self):
         self.peer = None
-        self.root.current = "contacts"
+        self.root.current = self.chat_from
         self.refresh_contacts()
+        if self.chat_from == "feed":
+            self.refresh_feed(silent=True)
 
     # ---------- profile ----------
     def open_settings(self):
@@ -1872,6 +2537,185 @@ class ChatApp(MDApp):
 
         self.bg(lambda: self.api.set_display_name(name), done)
 
+    # ---------- tabs ----------
+    def go_tab(self, name):
+        self.root.current = name
+        if name == "feed":
+            self.refresh_feed()
+        elif name == "people":
+            self.refresh_people()
+        elif name == "contacts":
+            self.refresh_contacts()
+
+    def open_search(self):
+        self.go_tab("people")
+        Clock.schedule_once(lambda dt: setattr(self.root.ids.people_search, "focus", True), 0.2)
+
+    def refresh_people(self):
+        if not self.root:
+            return
+        q = self.root.ids.people_search.text.strip().lower()
+        lst = self.root.ids.people_list
+        lst.clear_widgets()
+        people = sorted(self.users, key=lambda u: (u.get("seconds_ago") is None,
+                                                   u.get("seconds_ago") or 0, name_of(u).lower()))
+        shown = 0
+        for u in people:
+            name, sec = name_of(u), u.get("seconds_ago")
+            if q and q not in name.lower() and q not in u["username"].lower():
+                continue
+            lst.add_widget(ContactRow(
+                name=name, subtitle=presence_text(sec) or "@" + u["username"], initial=initial(name),
+                avatar_color=avatar_color(u["username"]), online=is_online(sec),
+                on_release=lambda x, uid=u["id"], n=name: self.open_chat(uid, n)))
+            shown += 1
+        if not shown:
+            lst.add_widget(MDLabel(
+                text="No matches" if q else "No one else has joined yet.",
+                halign="center", theme_text_color="Hint", size_hint_y=None, height=dp(120)))
+
+    # ---------- home feed ----------
+    def refresh_feed(self, silent=False):
+        if not self.api.uid or not self.root:
+            return
+        self.feed_req += 1
+        req, vibe = self.feed_req, self.vibe_filter
+
+        def done(rows):
+            if req == self.feed_req:  # ignore answers to an outdated filter
+                self.render_feed(rows)
+
+        def fail(e):
+            if req != self.feed_req or (silent and self.feed_loaded):
+                return
+            msg = str(e)
+            if "get_feed" in msg or "schema cache" in msg:
+                self.feed_message("Posts need a database update. Run update_v5.sql in the Supabase SQL Editor.")
+            else:
+                self.feed_message("Could not load posts. Check your connection.")
+
+        self.bg(lambda: self.api.feed(vibe), done, fail)
+
+    def feed_message(self, text):
+        box = self.root.ids.feed_list
+        box.clear_widgets()
+        box.add_widget(MDLabel(text=text, halign="center", theme_text_color="Hint",
+                               size_hint_y=None, height=dp(120)))
+
+    def render_feed(self, rows):
+        self.feed_loaded = True
+        if not rows:
+            self.feed_message("No posts yet. Be the first to share a vibe!")
+            return
+        box = self.root.ids.feed_list
+        box.clear_widgets()
+        for r in rows:
+            name = (r.get("display_name") or r.get("username") or "?").strip()
+            vibe, vcolor = VIBE_BY_KEY.get(r.get("vibe") or "", ("", [0.5, 0.5, 0.5, 1]))
+            exp = expiry_text(r.get("expires_in"))
+            meta = age_text(r.get("age_seconds")) + (" · " + exp if exp else "")
+            box.add_widget(PostCard(
+                pid=r["id"], author_id=r["author"], name=name, initial=initial(name),
+                color=avatar_color(r.get("username") or name), meta=meta,
+                prompt=("Question of the day: " + r["prompt"]) if r.get("prompt") else "",
+                body=r["body"], vibe=vibe, vibe_color=vcolor, likes=int(r.get("likes") or 0),
+                liked=bool(r.get("liked")), mine=r["author"] == self.api.uid))
+
+    def set_vibe_filter(self, key):
+        self.vibe_filter = key
+        self.refresh_feed()
+
+    def toggle_like(self, card):
+        card.liked = not card.liked
+        card.likes = max(0, card.likes + (1 if card.liked else -1))
+        pid = int(card.pid)
+
+        def done(res):
+            if res and "likes" in res:
+                card.likes, card.liked = int(res["likes"]), bool(res.get("liked"))
+
+        def fail(e):  # undo the instant change
+            card.liked = not card.liked
+            card.likes = max(0, card.likes + (1 if card.liked else -1))
+            self.show_err(e)
+
+        self.bg(lambda: self.api.toggle_like(pid), done, fail)
+
+    def confirm_delete_post(self, card):
+        pid = int(card.pid)
+
+        def close(*args):
+            dlg.dismiss()
+
+        def go(*args):
+            dlg.dismiss()
+            self.bg(lambda: self.api.delete_post(pid), lambda _: self.refresh_feed(), self.show_err)
+
+        dlg = MDDialog(
+            title="Delete post?", text="This removes your post for everyone.",
+            buttons=[MDFlatButton(text="CANCEL", on_release=close),
+                     MDFlatButton(text="DELETE", theme_text_color="Custom",
+                                  text_color=(0.86, 0.2, 0.25, 1), on_release=go)])
+        dlg.open()
+
+    def reply_to_post(self, card):
+        """Unique to Chatly: answer a post privately, in a chat that quotes it."""
+        self.open_chat(card.author_id, card.name)
+        field = self.root.ids.msg_field
+        field.text = 'Re: "' + short(card.body, 40) + '" '
+        Clock.schedule_once(lambda dt: setattr(field, "focus", True), 0.3)
+
+    # ---------- composer ----------
+    def open_compose(self, prompt=""):
+        ids = self.root.ids
+        ids.post_input.text = ""
+        self.post_prompt, self.post_vibe, self.post_hours = prompt, "", 24
+        self.post_ready, self.post_chars = False, "0/500"
+        self.root.current = "compose"
+        Clock.schedule_once(lambda dt: setattr(ids.post_input, "focus", True), 0.3)
+
+    def answer_prompt(self):
+        self.open_compose(self.prompt_text)
+
+    def close_compose(self):
+        self.root.ids.post_input.focus = False
+        self.root.current = "feed"
+
+    def on_post_text(self, widget):
+        text = widget.text
+        if len(text) > 500:
+            widget.text = text[:500]
+            return
+        self.post_chars = f"{len(text)}/500"
+        self.post_ready = bool(text.strip())
+
+    def set_post_vibe(self, key):
+        self.post_vibe = "" if self.post_vibe == key else key  # tap again to clear
+
+    def set_post_hours(self, hours):
+        self.post_hours = hours
+
+    def share_post(self):
+        text = self.root.ids.post_input.text.strip()
+        if not text or not self.post_ready:
+            return
+        vibe, hours, prompt = self.post_vibe, int(self.post_hours), self.post_prompt
+        self.loading = True
+
+        def done(_):
+            self.loading = False
+            self.close_compose()
+            self.refresh_feed()
+
+        def fail(e):
+            self.loading = False
+            msg = str(e)
+            if "create_post" in msg or "schema cache" in msg:
+                msg = "Posts are not set up yet. Run update_v5.sql in the Supabase SQL Editor."
+            self.notify(msg[:200])
+
+        self.bg(lambda: self.api.create_post(text, vibe, prompt, hours), done, fail)
+
     # ---------- notes (Messenger-style composer) ----------
     def open_note(self):
         ids = self.root.ids
@@ -1884,7 +2728,7 @@ class ChatApp(MDApp):
 
     def close_note(self):
         self.root.ids.note_input.focus = False
-        self.root.current = "contacts"
+        self.root.current = "feed"
         self.refresh_contacts()
 
     def on_note_text(self, widget):
