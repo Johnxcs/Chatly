@@ -306,9 +306,14 @@ KV = """
         badge: app.unread_total
         on_release: app.go_tab("contacts")
     TabItem:
-        icon: "account-group" if root.current == "people" else "account-group-outline"
+        icon: "account-multiple" if root.current == "people" else "account-multiple-outline"
         active: root.current == "people"
+        badge: app.request_count
         on_release: app.go_tab("people")
+    TabItem:
+        icon: "account-circle" if root.current == "me" else "account-circle-outline"
+        active: root.current == "me"
+        on_release: app.go_tab("me")
     TabItem:
         icon: "menu"
         active: root.current == "settings"
@@ -339,10 +344,11 @@ KV = """
     md_bg_color: WHITE
     padding: dp(14), dp(12), dp(14), dp(2)
     spacing: dp(8)
-    MDBoxLayout:
+    TapBox:
         size_hint_y: None
         height: dp(46)
         spacing: dp(10)
+        on_release: app.open_user(root.author_id)
         AvatarDot:
             size: dp(42), dp(42)
             pos_hint: {"center_y": .5}
@@ -468,6 +474,191 @@ KV = """
                 size_hint_x: None
                 width: self.texture_size[0]
             Widget:
+
+<PersonRow>:
+    orientation: "horizontal"
+    size_hint_y: None
+    height: dp(78)
+    padding: dp(14), dp(10)
+    spacing: dp(10)
+    md_bg_color: (0.95, 0.96, 0.98, 1) if self.state == "down" else WHITE
+    AvatarDot:
+        size: dp(54), dp(54)
+        pos_hint: {"center_y": .5}
+        initial: root.initial
+        color: root.color
+        online: root.online
+    MDBoxLayout:
+        orientation: "vertical"
+        adaptive_height: True
+        pos_hint: {"center_y": .5}
+        MDLabel:
+            text: root.name
+            font_style: "Subtitle1"
+            bold: True
+            theme_text_color: "Custom"
+            text_color: INK
+            size_hint_y: None
+            text_size: self.width, None
+            height: self.texture_size[1]
+        MDLabel:
+            text: root.subtitle
+            font_style: "Caption"
+            theme_text_color: "Custom"
+            text_color: MUTED
+            size_hint_y: None
+            text_size: self.width, None
+            height: self.texture_size[1]
+        TapBox:
+            size_hint: None, None
+            size: (pl.texture_size[0] + dp(30), dp(36)) if root.primary else (0, 0)
+            pos_hint: {"center_y": .5}
+            opacity: 1 if root.primary else 0
+            on_release: app.person_primary(root)
+            PassCard:
+                radius: [dp(18)]
+                elevation: 0
+                md_bg_color: PRIMARY
+                padding: dp(15), 0
+                Label:
+                    id: pl
+                    text: root.primary
+                    font_size: "13sp"
+                    bold: True
+                    color: WHITE
+                    size_hint: None, None
+                    size: self.texture_size
+                    pos_hint: {"center_y": .5}
+        TapBox:
+            size_hint: None, None
+            size: (sl.texture_size[0] + dp(30), dp(36)) if root.secondary else (0, 0)
+            pos_hint: {"center_y": .5}
+            opacity: 1 if root.secondary else 0
+            on_release: app.person_secondary(root)
+            PassCard:
+                radius: [dp(18)]
+                elevation: 0
+                md_bg_color: (0.91, 0.92, 0.94, 1)
+                padding: dp(15), 0
+                Label:
+                    id: sl
+                    text: root.secondary
+                    font_size: "13sp"
+                    bold: True
+                    color: INK
+                    size_hint: None, None
+                    size: self.texture_size
+                    pos_hint: {"center_y": .5}
+
+<ProfileHeader>:
+    orientation: "vertical"
+    adaptive_height: True
+    md_bg_color: WHITE
+    padding: dp(16), dp(22), dp(16), dp(16)
+    spacing: dp(8)
+    AvatarDot:
+        size: dp(96), dp(96)
+        pos_hint: {"center_x": .5}
+        initial: root.initial
+        color: root.color
+    MDLabel:
+        text: root.name
+        halign: "center"
+        font_style: "H6"
+        bold: True
+        theme_text_color: "Custom"
+        text_color: INK
+        size_hint_y: None
+        text_size: self.width, None
+        height: self.texture_size[1]
+    MDLabel:
+        text: "@" + root.username
+        halign: "center"
+        font_style: "Caption"
+        theme_text_color: "Custom"
+        text_color: MUTED
+        size_hint_y: None
+        text_size: self.width, None
+        height: self.texture_size[1]
+    MDLabel:
+        text: root.bio
+        halign: "center"
+        font_style: "Body2"
+        theme_text_color: "Custom"
+        text_color: INK
+        size_hint_y: None
+        text_size: self.width, None
+        height: self.texture_size[1] if self.text else 0
+        opacity: 1 if self.text else 0
+    MDLabel:
+        text: root.hint
+        halign: "center"
+        font_style: "Body2"
+        theme_text_color: "Custom"
+        text_color: MUTED
+        size_hint_y: None
+        text_size: self.width, None
+        height: self.texture_size[1] if self.text else 0
+        opacity: 1 if self.text else 0
+    MDLabel:
+        text: root.stats
+        halign: "center"
+        font_style: "Caption"
+        bold: True
+        theme_text_color: "Custom"
+        text_color: MUTED
+        size_hint_y: None
+        text_size: self.width, None
+        height: self.texture_size[1] if self.text else 0
+        opacity: 1 if self.text else 0
+    MDBoxLayout:
+        size_hint_y: None
+        height: dp(46) if (root.primary or root.secondary) else 0
+        opacity: 1 if (root.primary or root.secondary) else 0
+        spacing: dp(10)
+        padding: dp(6), dp(4)
+        Widget:
+        TapBox:
+            size_hint: None, None
+            size: (pl.texture_size[0] + dp(30), dp(36)) if root.primary else (0, 0)
+            pos_hint: {"center_y": .5}
+            opacity: 1 if root.primary else 0
+            on_release: root.dispatch("on_primary")
+            PassCard:
+                radius: [dp(18)]
+                elevation: 0
+                md_bg_color: PRIMARY
+                padding: dp(15), 0
+                Label:
+                    id: pl
+                    text: root.primary
+                    font_size: "13sp"
+                    bold: True
+                    color: WHITE
+                    size_hint: None, None
+                    size: self.texture_size
+                    pos_hint: {"center_y": .5}
+        TapBox:
+            size_hint: None, None
+            size: (sl.texture_size[0] + dp(30), dp(36)) if root.secondary else (0, 0)
+            pos_hint: {"center_y": .5}
+            opacity: 1 if root.secondary else 0
+            on_release: root.dispatch("on_secondary")
+            PassCard:
+                radius: [dp(18)]
+                elevation: 0
+                md_bg_color: (0.91, 0.92, 0.94, 1)
+                padding: dp(15), 0
+                Label:
+                    id: sl
+                    text: root.secondary
+                    font_size: "13sp"
+                    bold: True
+                    color: INK
+                    size_hint: None, None
+                    size: self.texture_size
+                    pos_hint: {"center_y": .5}
+        Widget:
 
 <Bubble>:
     orientation: "horizontal"
@@ -856,7 +1047,7 @@ MDScreenManager:
 
     MDScreen:
         name: "people"
-        md_bg_color: WHITE
+        md_bg_color: BG
         MDBoxLayout:
             orientation: "vertical"
             TopBar:
@@ -865,6 +1056,7 @@ MDScreenManager:
             MDBoxLayout:
                 size_hint_y: None
                 height: dp(60)
+                md_bg_color: WHITE
                 padding: dp(16), dp(6)
                 MDCard:
                     radius: [dp(22)]
@@ -881,7 +1073,7 @@ MDScreenManager:
                         text_color: MUTED
                     TextInput:
                         id: people_search
-                        hint_text: "Search people"
+                        hint_text: "Find people"
                         multiline: False
                         background_color: 0, 0, 0, 0
                         background_normal: ""
@@ -894,10 +1086,112 @@ MDScreenManager:
                         on_text: app.refresh_people()
             ScrollView:
                 bar_width: 0
+                do_scroll_x: False
                 MDBoxLayout:
                     id: people_list
                     orientation: "vertical"
                     adaptive_height: True
+                    spacing: dp(1)
+
+    MDScreen:
+        name: "me"
+        md_bg_color: BG
+        MDBoxLayout:
+            orientation: "vertical"
+            TopBar:
+            TabBar:
+                current: "me"
+            ScrollView:
+                bar_width: 0
+                do_scroll_x: False
+                MDBoxLayout:
+                    orientation: "vertical"
+                    adaptive_height: True
+                    spacing: dp(8)
+                    ProfileHeader:
+                        initial: app.me_initial
+                        color: app.me_color
+                        name: app.me_name
+                        username: app.me_username
+                        bio: app.me_bio
+                        stats: app.me_stats
+                        primary: "Edit profile"
+                        secondary: "New post"
+                        on_primary: app.open_profile()
+                        on_secondary: app.open_compose()
+                    MDBoxLayout:
+                        size_hint_y: None
+                        height: dp(34)
+                        padding: dp(14), dp(8), dp(14), 0
+                        SectionLabel:
+                            text: "MY POSTS"
+                    MDBoxLayout:
+                        id: me_posts
+                        orientation: "vertical"
+                        adaptive_height: True
+                        spacing: dp(8)
+
+    MDScreen:
+        name: "user"
+        md_bg_color: BG
+        MDBoxLayout:
+            orientation: "vertical"
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(64)
+                md_bg_color: WHITE
+                padding: dp(4), dp(6), dp(12), dp(6)
+                spacing: dp(6)
+                MDIconButton:
+                    icon: "arrow-left"
+                    pos_hint: {"center_y": .5}
+                    theme_icon_color: "Custom"
+                    icon_color: INK
+                    on_release: app.close_user()
+                MDLabel:
+                    text: app.view_name
+                    font_style: "H6"
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: INK
+                    size_hint_y: None
+                    text_size: self.width, None
+                    height: self.texture_size[1]
+                    pos_hint: {"center_y": .5}
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(1)
+                md_bg_color: LINE
+            ScrollView:
+                bar_width: 0
+                do_scroll_x: False
+                MDBoxLayout:
+                    orientation: "vertical"
+                    adaptive_height: True
+                    spacing: dp(8)
+                    ProfileHeader:
+                        initial: app.view_initial
+                        color: app.view_color
+                        name: app.view_name
+                        username: app.view_username
+                        bio: app.view_bio
+                        hint: app.view_hint
+                        stats: app.view_stats
+                        primary: app.view_primary
+                        secondary: app.view_secondary
+                        on_primary: app.view_primary_tap()
+                        on_secondary: app.view_secondary_tap()
+                    MDBoxLayout:
+                        size_hint_y: None
+                        height: dp(34)
+                        padding: dp(14), dp(8), dp(14), 0
+                        SectionLabel:
+                            text: "POSTS"
+                    MDBoxLayout:
+                        id: user_posts
+                        orientation: "vertical"
+                        adaptive_height: True
+                        spacing: dp(8)
 
     MDScreen:
         name: "settings"
@@ -1133,8 +1427,12 @@ MDScreenManager:
                             id: name_field
                             hint_text: "Display name"
                             mode: "rectangle"
+                        MDTextField:
+                            id: bio_field
+                            hint_text: "Bio (up to 150 characters)"
+                            mode: "rectangle"
                         MDLabel:
-                            text: "This is the name your friends see in chats."
+                            text: "Your name and bio are shown to your friends."
                             font_style: "Caption"
                             theme_text_color: "Custom"
                             text_color: MUTED
@@ -1715,6 +2013,20 @@ def expiry_text(sec):
     return f"Vanishes in {h}h" if h < 24 else f"Vanishes in {h // 24}d"
 
 
+def is_friend(u):
+    return (u.get("status") or "friends") == "friends"  # old databases (no friends update) count as friends
+
+
+def buttons_for(status):
+    """(primary, secondary) button labels for a relationship."""
+    return {"none": ("Add friend", ""), "outgoing": ("", "Cancel request"),
+            "incoming": ("Confirm", "Delete"), "friends": ("Message", "Unfriend")}.get(status, ("", ""))
+
+
+def mutual_text(n):
+    return "" if not n else ("1 mutual friend" if n == 1 else f"{n} mutual friends")
+
+
 class Supa:
     """Minimal Supabase client (Auth + PostgREST) using plain HTTPS requests."""
 
@@ -1789,11 +2101,12 @@ class Supa:
         try:
             rows = self._req("POST", "/rest/v1/rpc/get_people", json={})
             return [{"id": r["id"], "username": r["username"], "display_name": r.get("display_name"),
-                     "seconds_ago": r.get("seconds_ago"), "note": r.get("note")} for r in rows]
+                     "seconds_ago": r.get("seconds_ago"), "note": r.get("note"),
+                     "status": r.get("status") or "friends", "mutual": int(r.get("mutual") or 0)} for r in rows]
         except RuntimeError:
             rows = self._req("GET", "/rest/v1/profiles", params={"select": "id,username", "order": "username"})
             return [{"id": r["id"], "username": r["username"], "display_name": None, "seconds_ago": None,
-                     "note": None} for r in rows if r["id"] != self.uid]
+                     "note": None, "status": "friends", "mutual": 0} for r in rows if r["id"] != self.uid]
 
     def me(self):
         try:
@@ -1825,8 +2138,30 @@ class Supa:
     def delete_account(self):
         self._req("POST", "/rest/v1/rpc/delete_my_account", json={})
 
-    def feed(self, vibe=""):
-        return self._req("POST", "/rest/v1/rpc/get_feed", json={"p_vibe": vibe or None, "p_limit": 40}) or []
+    def profile(self, uid):
+        try:
+            rows = self._req("POST", "/rest/v1/rpc/get_profile", json={"p_user": uid})
+            return rows[0] if rows else {}
+        except RuntimeError:
+            return {}  # friends update not installed yet
+
+    def send_request(self, uid):
+        return self._req("POST", "/rest/v1/rpc/send_friend_request", json={"p_user": uid})
+
+    def respond_request(self, uid, accept):
+        return self._req("POST", "/rest/v1/rpc/respond_friend_request", json={"p_user": uid, "p_accept": bool(accept)})
+
+    def remove_friend(self, uid):
+        return self._req("POST", "/rest/v1/rpc/remove_friend", json={"p_user": uid})
+
+    def set_bio(self, text):
+        self._req("POST", "/rest/v1/rpc/set_bio", json={"p_bio": text})
+
+    def feed(self, vibe="", author=None):
+        payload = {"p_vibe": vibe or None, "p_limit": 40}
+        if author:
+            payload["p_author"] = author
+        return self._req("POST", "/rest/v1/rpc/get_feed", json=payload) or []
 
     def create_post(self, body, vibe, prompt, hours):
         self._req("POST", "/rest/v1/rpc/create_post",
@@ -1879,7 +2214,7 @@ class LocalDB:
         self.conn.row_factory = sqlite3.Row
         with self.lock, self.conn:
             self.conn.executescript("""
-                CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY, username TEXT NOT NULL, display_name TEXT);
+                CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY, username TEXT NOT NULL, display_name TEXT, status TEXT);
                 CREATE TABLE IF NOT EXISTS messages(
                     id INTEGER PRIMARY KEY, sender TEXT NOT NULL, receiver TEXT NOT NULL,
                     text TEXT NOT NULL, created_at TEXT);
@@ -1889,19 +2224,21 @@ class LocalDB:
             cols = [r[1] for r in self.conn.execute("PRAGMA table_info(users)")]
             if "display_name" not in cols:  # cache created by an older app version
                 self.conn.execute("ALTER TABLE users ADD COLUMN display_name TEXT")
+            if "status" not in cols:
+                self.conn.execute("ALTER TABLE users ADD COLUMN status TEXT")
 
     def save_users(self, users):
         with self.lock, self.conn:
             self.conn.execute("DELETE FROM users")
-            self.conn.executemany("INSERT INTO users(id, username, display_name) VALUES(?, ?, ?)",
-                                  [(u["id"], u["username"], u.get("display_name")) for u in users])
+            self.conn.executemany("INSERT INTO users(id, username, display_name, status) VALUES(?, ?, ?, ?)",
+                                  [(u["id"], u["username"], u.get("display_name"), u.get("status")) for u in users])
 
     def load_users(self):
         with self.lock:
             rows = self.conn.execute(
-                "SELECT id, username, display_name FROM users ORDER BY COALESCE(display_name, username)").fetchall()
+                "SELECT id, username, display_name, status FROM users ORDER BY COALESCE(display_name, username)").fetchall()
         return [{"id": r["id"], "username": r["username"], "display_name": r["display_name"],
-                 "seconds_ago": None} for r in rows]
+                 "seconds_ago": None, "status": r["status"] or "friends", "mutual": 0} for r in rows]
 
     def save_messages(self, msgs):
         with self.lock, self.conn:
@@ -2016,6 +2353,39 @@ class SwitchRow(MDBoxLayout):
     active = BooleanProperty(False)
 
 
+class PersonRow(ButtonBehavior, MDBoxLayout):
+    """A person in the Friends tab, with action buttons that depend on the friendship state."""
+    uid = StringProperty("")
+    name = StringProperty("")
+    initial = StringProperty("?")
+    color = ListProperty([0, 0.52, 1, 1])
+    subtitle = StringProperty("")
+    online = BooleanProperty(False)
+    status = StringProperty("none")
+    primary = StringProperty("")
+    secondary = StringProperty("")
+
+
+class ProfileHeader(MDBoxLayout):
+    """Avatar, name, bio, stats and two buttons; used for your own profile and for other people's."""
+    __events__ = ("on_primary", "on_secondary")
+    initial = StringProperty("?")
+    color = ListProperty([0, 0.52, 1, 1])
+    name = StringProperty("")
+    username = StringProperty("")
+    bio = StringProperty("")
+    hint = StringProperty("")
+    stats = StringProperty("")
+    primary = StringProperty("")
+    secondary = StringProperty("")
+
+    def on_primary(self):
+        pass
+
+    def on_secondary(self):
+        pass
+
+
 class TopBar(MDBoxLayout):
     """Blue Facebook-Lite-style bar with the app name and quick icons."""
 
@@ -2102,6 +2472,20 @@ class ChatApp(MDApp):
     note_ready = BooleanProperty(False)
     has_note = BooleanProperty(False)
     unread_total = NumericProperty(0)
+    request_count = NumericProperty(0)
+    me_bio = StringProperty("")
+    me_stats = StringProperty("")
+    view_uid = StringProperty("")
+    view_name = StringProperty("")
+    view_username = StringProperty("")
+    view_initial = StringProperty("?")
+    view_color = ListProperty([0, 0.52, 1, 1])
+    view_bio = StringProperty("")
+    view_hint = StringProperty("")
+    view_stats = StringProperty("")
+    view_status = StringProperty("none")
+    view_primary = StringProperty("")
+    view_secondary = StringProperty("")
     vibe_filter = StringProperty("")
     post_vibe = StringProperty("")
     post_hours = NumericProperty(24)
@@ -2129,7 +2513,7 @@ class ChatApp(MDApp):
         self.prefs = {"previews": True, "rail": True}
         if self.store.exists("prefs"):
             self.prefs.update(self.store.get("prefs"))
-        self.feed_req, self.feed_loaded, self.chat_from = 0, False, "feed"
+        self.feed_req, self.feed_loaded, self.chat_from, self.user_from = 0, False, "feed", "people"
         self.prompt_text = today_prompt()
         Window.softinput_mode = "below_target"
         Window.bind(on_keyboard=self._on_key)
@@ -2173,7 +2557,10 @@ class ChatApp(MDApp):
 
     def show_err(self, e):
         self.loading = False
-        self.notify(str(e)[:140])
+        msg = str(e)
+        if "row-level security" in msg and "messages" in msg:
+            msg = "You can only message people who are your friends."
+        self.notify(msg[:140])
 
     def toggle_mode(self):
         self.signup_mode = not self.signup_mode
@@ -2188,7 +2575,7 @@ class ChatApp(MDApp):
 
     def users_key(self, users):
         return [(u["id"], name_of(u), is_online(u.get("seconds_ago")), u.get("note"),
-                 badge_text(u.get("seconds_ago"))) for u in users]
+                 badge_text(u.get("seconds_ago")), u.get("status"), u.get("mutual")) for u in users]
 
     def user_by_id(self, uid):
         return next((u for u in self.users if u["id"] == uid), None)
@@ -2211,11 +2598,14 @@ class ChatApp(MDApp):
         self.heartbeat(0)
 
     def _on_key(self, window, key, *args):
-        """Android back button: go back one screen; from a tab go Home; from Home leave the app."""
+        """Android back button: back one screen; from a tab go Home; from Home leave the app."""
         if key == 27 and self.root:
             cur = self.root.current
             if cur == "chat":
                 self.back()
+                return True
+            if cur == "user":
+                self.close_user()
                 return True
             if cur in ("profile", "password"):
                 self.back_to_settings()
@@ -2226,7 +2616,7 @@ class ChatApp(MDApp):
             if cur == "compose":
                 self.close_compose()
                 return True
-            if cur in ("contacts", "people", "settings"):
+            if cur in ("contacts", "people", "me", "settings"):
                 self.go_tab("feed")
                 return True
         return False
@@ -2309,11 +2699,13 @@ class ChatApp(MDApp):
 
         def done(res):
             self.users, self.last_id, me = res
+            self.request_count = sum(1 for u in self.users if u.get("status") == "incoming")
             self.set_me(me)
             self.loading = False
             self.refresh_contacts()
             self.root.current = "feed"
             self.refresh_feed()
+            self.refresh_me()
 
         self.bg(init, done)
 
@@ -2361,6 +2753,7 @@ class ChatApp(MDApp):
                 if self.users_key(users) != self.users_key(self.users):
                     changed = True
                 self.users = users
+                self.request_count = sum(1 for u in users if u.get("status") == "incoming")
                 self.update_peer_status()
             for m in inc:
                 self.last_id = max(self.last_id, m["id"])
@@ -2393,6 +2786,8 @@ class ChatApp(MDApp):
         lst.clear_widgets()
         rows = []
         for u in self.users:
+            if not is_friend(u):
+                continue  # only friends can be chatted with
             name = name_of(u)
             if q and q not in name.lower() and q not in u["username"].lower():
                 continue
@@ -2433,6 +2828,8 @@ class ChatApp(MDApp):
             on_release=lambda x: self.open_note()))
         people = []
         for u in self.users:
+            if not is_friend(u):
+                continue
             sec = u.get("seconds_ago")
             if is_online(sec) or u.get("note") or (sec is not None and sec < 86400):
                 people.append(u)
@@ -2447,7 +2844,11 @@ class ChatApp(MDApp):
 
     # ---------- chat ----------
     def open_chat(self, uid, name):
-        if self.root.current in ("feed", "contacts", "people"):
+        other = self.user_by_id(uid)
+        if other and not is_friend(other):
+            self.notify(f"Add {name} as a friend to start a conversation.")
+            return
+        if self.root.current in ("feed", "contacts", "people", "me", "user"):
             self.chat_from = self.root.current
         self.peer = uid
         self.unread.pop(uid, None)
@@ -2507,6 +2908,7 @@ class ChatApp(MDApp):
 
     def open_profile(self):
         self.root.ids.name_field.text = self.me.get("display_name") or ""
+        self.root.ids.bio_field.text = self.me_bio
         self.root.current = "profile"
 
     def open_password(self):
@@ -2523,19 +2925,37 @@ class ChatApp(MDApp):
         self.refresh_contacts()
 
     def save_profile(self):
-        name = self.root.ids.name_field.text.strip()
+        ids = self.root.ids
+        name, bio = ids.name_field.text.strip(), ids.bio_field.text.strip()
         if len(name) > 40:
             self.notify("Display name can be up to 40 characters")
             return
+        if len(bio) > 150:
+            self.notify("Bio can be up to 150 characters")
+            return
+        old_bio = self.me_bio
         self.loading = True
+
+        def work():
+            self.api.set_display_name(name)
+            if bio != old_bio:
+                self.api.set_bio(bio)  # needs supabase/update_v6.sql
 
         def done(_):
             self.loading = False
             self.me["display_name"] = name or None
+            self.me_bio = bio
             self.set_me(self.me)
             self.back_to_settings()
 
-        self.bg(lambda: self.api.set_display_name(name), done)
+        def fail(e):
+            self.loading = False
+            msg = str(e)
+            if "set_bio" in msg or "schema cache" in msg:
+                msg = "Bios are not set up yet. Run update_v6.sql in the Supabase SQL Editor."
+            self.notify(msg[:200])
+
+        self.bg(work, done, fail)
 
     # ---------- tabs ----------
     def go_tab(self, name):
@@ -2546,33 +2966,249 @@ class ChatApp(MDApp):
             self.refresh_people()
         elif name == "contacts":
             self.refresh_contacts()
+        elif name == "me":
+            self.refresh_me()
 
     def open_search(self):
         self.go_tab("people")
         Clock.schedule_once(lambda dt: setattr(self.root.ids.people_search, "focus", True), 0.2)
 
+    # ---------- friends ----------
+    def section_header(self, text):
+        box = MDBoxLayout(size_hint_y=None, height=dp(34), padding=(dp(14), dp(8), dp(14), 0))
+        box.add_widget(SectionLabel(text=text))
+        return box
+
     def refresh_people(self):
+        """Friends tab: requests, suggestions, your friends (or search results)."""
         if not self.root:
             return
         q = self.root.ids.people_search.text.strip().lower()
         lst = self.root.ids.people_list
         lst.clear_widgets()
-        people = sorted(self.users, key=lambda u: (u.get("seconds_ago") is None,
-                                                   u.get("seconds_ago") or 0, name_of(u).lower()))
-        shown = 0
-        for u in people:
-            name, sec = name_of(u), u.get("seconds_ago")
-            if q and q not in name.lower() and q not in u["username"].lower():
-                continue
-            lst.add_widget(ContactRow(
-                name=name, subtitle=presence_text(sec) or "@" + u["username"], initial=initial(name),
-                avatar_color=avatar_color(u["username"]), online=is_online(sec),
-                on_release=lambda x, uid=u["id"], n=name: self.open_chat(uid, n)))
-            shown += 1
-        if not shown:
-            lst.add_widget(MDLabel(
-                text="No matches" if q else "No one else has joined yet.",
-                halign="center", theme_text_color="Hint", size_hint_y=None, height=dp(120)))
+
+        def row(u):
+            name, st, sec = name_of(u), u.get("status") or "friends", u.get("seconds_ago")
+            if st == "friends":
+                sub = presence_text(sec) or "@" + u["username"]
+            elif st == "outgoing":
+                sub = "Request sent"
+            elif st == "incoming":
+                sub = mutual_text(u.get("mutual")) or "Wants to be your friend"
+            else:
+                sub = mutual_text(u.get("mutual")) or "New on Chatly"
+            primary, secondary = buttons_for(st)
+            return PersonRow(
+                uid=u["id"], name=name, initial=initial(name), color=avatar_color(u["username"]),
+                subtitle=sub, online=is_online(sec), status=st, primary=primary, secondary=secondary,
+                on_release=lambda x, uid=u["id"]: self.open_user(uid))
+
+        def add_section(title, users, empty=""):
+            lst.add_widget(self.section_header(title))
+            for u in users:
+                lst.add_widget(row(u))
+            if not users and empty:
+                lst.add_widget(MDLabel(text=empty, halign="center", theme_text_color="Hint",
+                                       size_hint_y=None, height=dp(70)))
+
+        def by_name(u):
+            return name_of(u).lower()
+
+        if q:
+            hits = [u for u in self.users if q in name_of(u).lower() or q in u["username"].lower()]
+            if hits:
+                add_section("SEARCH RESULTS", sorted(hits, key=by_name))
+            else:
+                lst.add_widget(MDLabel(text="No one found", halign="center", theme_text_color="Hint",
+                                       size_hint_y=None, height=dp(120)))
+            return
+        incoming = [u for u in self.users if u.get("status") == "incoming"]
+        sent = [u for u in self.users if u.get("status") == "outgoing"]
+        friends = [u for u in self.users if is_friend(u)]
+        suggestions = sorted((u for u in self.users if u.get("status") == "none"),
+                             key=lambda u: (-int(u.get("mutual") or 0), by_name(u)))[:15]
+        if incoming:
+            add_section(f"FRIEND REQUESTS ({len(incoming)})", sorted(incoming, key=by_name))
+        if suggestions:
+            add_section("PEOPLE YOU MAY KNOW", suggestions)
+        if sent:
+            add_section("REQUESTS YOU SENT", sorted(sent, key=by_name))
+        friends.sort(key=lambda u: (u.get("seconds_ago") is None, u.get("seconds_ago") or 0, by_name(u)))
+        add_section(f"YOUR FRIENDS ({len(friends)})" if friends else "YOUR FRIENDS", friends,
+                    empty="No friends yet. Send a request to someone above." if suggestions else
+                          "No friends yet. Use search to find people.")
+
+    def person_primary(self, row):
+        self.do_primary(row.uid, row.status, row.name)
+
+    def person_secondary(self, row):
+        self.do_secondary(row.uid, row.status, row.name)
+
+    def do_primary(self, uid, status, name):
+        if status == "none":
+            self.friend_action(uid, "add")
+        elif status == "incoming":
+            self.friend_action(uid, "accept")
+        elif status == "friends":
+            self.open_chat(uid, name)
+
+    def do_secondary(self, uid, status, name):
+        if status == "outgoing":
+            self.friend_action(uid, "cancel")
+        elif status == "incoming":
+            self.friend_action(uid, "decline")
+        elif status == "friends":
+            self.confirm_unfriend(uid, name)
+
+    def friend_action(self, uid, kind):
+        """kind: add | cancel | accept | decline | unfriend"""
+        def work():
+            if kind == "add":
+                return self.api.send_request(uid)
+            if kind == "accept":
+                return self.api.respond_request(uid, True)
+            if kind == "decline":
+                return self.api.respond_request(uid, False)
+            return self.api.remove_friend(uid)  # cancel or unfriend
+
+        self.bg(work, lambda status: self.set_status(uid, status), self.friends_fail)
+
+    def friends_fail(self, e):
+        self.loading = False
+        msg = str(e)
+        if any(k in msg for k in ("friend", "schema cache", "set_bio")):
+            msg = "Friends are not set up in your Supabase project yet. Run update_v6.sql in the SQL Editor."
+        self.notify(msg[:200])
+
+    def set_status(self, uid, status):
+        status = status if isinstance(status, str) else "none"
+        for u in self.users:
+            if u["id"] == uid:
+                u["status"] = status
+        self.request_count = sum(1 for u in self.users if u.get("status") == "incoming")
+        self.refresh_contacts()  # also redraws the Friends tab and the notes strip
+        if self.root.current == "user" and self.view_uid == uid:
+            self.fill_view(self.user_by_id(uid))
+            self.load_view(uid)
+
+    def confirm_unfriend(self, uid, name):
+        def close(*args):
+            dlg.dismiss()
+
+        def go(*args):
+            dlg.dismiss()
+            self.friend_action(uid, "unfriend")
+
+        dlg = MDDialog(
+            title="Unfriend?", text=f"{name} will no longer be able to see your posts or message you.",
+            buttons=[MDFlatButton(text="CANCEL", on_release=close),
+                     MDFlatButton(text="UNFRIEND", theme_text_color="Custom",
+                                  text_color=(0.86, 0.2, 0.25, 1), on_release=go)])
+        dlg.open()
+
+    # ---------- other people's profiles ----------
+    def open_user(self, uid):
+        if uid == self.api.uid:
+            self.go_tab("me")
+            return
+        if self.root.current in ("feed", "contacts", "people", "me"):
+            self.user_from = self.root.current
+        u = self.user_by_id(uid) or {"id": uid, "username": "?", "display_name": None,
+                                     "status": "none", "mutual": 0}
+        self.fill_view(u)
+        self.root.current = "user"
+        self.load_view(uid)
+
+    def fill_view(self, u):
+        if not u:
+            return
+        name, st = name_of(u), u.get("status") or "friends"
+        self.view_uid = u["id"]
+        self.view_name, self.view_username = name, u["username"]
+        self.view_initial, self.view_color = initial(name), avatar_color(u["username"])
+        self.view_status = st
+        self.view_primary, self.view_secondary = buttons_for(st)
+        self.view_bio = ""
+        if st == "friends":
+            self.view_hint, self.view_stats = "", ""
+        else:
+            first = name.split()[0] if name.split() else name
+            self.view_hint = f"Add {first} as a friend to see their profile and posts."
+            self.view_stats = mutual_text(u.get("mutual"))
+
+    def load_view(self, uid):
+        """Bio, counts and posts: the server only returns them for friends."""
+        st = self.view_status
+        box = self.root.ids.user_posts
+        box.clear_widgets()
+        if st != "friends":
+            return
+
+        def work():
+            try:
+                rows = self.api.feed("", uid)
+            except RuntimeError:
+                rows = []
+            return self.api.profile(uid), rows
+
+        def done(res):
+            if self.view_uid != uid:
+                return
+            prof, rows = res
+            self.view_bio = prof.get("bio") or ""
+            fc = prof.get("friends_count")
+            pc = prof.get("posts_count") if prof.get("posts_count") is not None else len(rows)
+            self.view_stats = f"{fc or 0} friends · {pc} posts"
+            self.fill_posts(box, rows, "No posts yet.")
+
+        self.bg(work, done, lambda e: None)
+
+    def close_user(self):
+        self.root.current = self.user_from
+        if self.user_from == "feed":
+            self.refresh_feed(silent=True)
+        elif self.user_from == "people":
+            self.refresh_people()
+
+    def view_primary_tap(self):
+        self.do_primary(self.view_uid, self.view_status, self.view_name)
+
+    def view_secondary_tap(self):
+        self.do_secondary(self.view_uid, self.view_status, self.view_name)
+
+    # ---------- my profile tab ----------
+    def refresh_me(self):
+        if not self.api.uid or not self.root:
+            return
+        uid = self.api.uid
+
+        def work():
+            try:
+                rows = self.api.feed("", uid)
+            except RuntimeError:
+                rows = []
+            return self.api.profile(uid), rows
+
+        def done(res):
+            prof, rows = res
+            self.me_bio = prof.get("bio") or ""
+            fc = prof.get("friends_count")
+            if fc is None:
+                fc = sum(1 for u in self.users if is_friend(u))
+            pc = prof.get("posts_count") if prof.get("posts_count") is not None else len(rows)
+            self.me_stats = f"{fc} friends · {pc} posts"
+            self.fill_posts(self.root.ids.me_posts, rows, "You have not posted yet.")
+
+        self.bg(work, done, lambda e: None)
+
+    def fill_posts(self, box, rows, empty):
+        box.clear_widgets()
+        if not rows:
+            box.add_widget(MDLabel(text=empty, halign="center", theme_text_color="Hint",
+                                   size_hint_y=None, height=dp(100)))
+            return
+        for r in rows:
+            box.add_widget(self.post_card(r))
 
     # ---------- home feed ----------
     def refresh_feed(self, silent=False):
@@ -2602,24 +3238,27 @@ class ChatApp(MDApp):
         box.add_widget(MDLabel(text=text, halign="center", theme_text_color="Hint",
                                size_hint_y=None, height=dp(120)))
 
+    def post_card(self, r):
+        name = (r.get("display_name") or r.get("username") or "?").strip()
+        vibe, vcolor = VIBE_BY_KEY.get(r.get("vibe") or "", ("", [0.5, 0.5, 0.5, 1]))
+        exp = expiry_text(r.get("expires_in"))
+        meta = age_text(r.get("age_seconds")) + (" · " + exp if exp else "")
+        return PostCard(
+            pid=r["id"], author_id=r["author"], name=name, initial=initial(name),
+            color=avatar_color(r.get("username") or name), meta=meta,
+            prompt=("Question of the day: " + r["prompt"]) if r.get("prompt") else "",
+            body=r["body"], vibe=vibe, vibe_color=vcolor, likes=int(r.get("likes") or 0),
+            liked=bool(r.get("liked")), mine=r["author"] == self.api.uid)
+
     def render_feed(self, rows):
         self.feed_loaded = True
         if not rows:
-            self.feed_message("No posts yet. Be the first to share a vibe!")
+            self.feed_message("No posts yet. Add friends to see their posts, or share your own!")
             return
         box = self.root.ids.feed_list
         box.clear_widgets()
         for r in rows:
-            name = (r.get("display_name") or r.get("username") or "?").strip()
-            vibe, vcolor = VIBE_BY_KEY.get(r.get("vibe") or "", ("", [0.5, 0.5, 0.5, 1]))
-            exp = expiry_text(r.get("expires_in"))
-            meta = age_text(r.get("age_seconds")) + (" · " + exp if exp else "")
-            box.add_widget(PostCard(
-                pid=r["id"], author_id=r["author"], name=name, initial=initial(name),
-                color=avatar_color(r.get("username") or name), meta=meta,
-                prompt=("Question of the day: " + r["prompt"]) if r.get("prompt") else "",
-                body=r["body"], vibe=vibe, vibe_color=vcolor, likes=int(r.get("likes") or 0),
-                liked=bool(r.get("liked")), mine=r["author"] == self.api.uid))
+            box.add_widget(self.post_card(r))
 
     def set_vibe_filter(self, key):
         self.vibe_filter = key

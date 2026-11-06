@@ -30,3 +30,7 @@ Run `supabase/update_v4.sql` once to enable Settings -> Delete account. Everythi
 ## Home feed (Facebook Lite style) + unique features
 Run `supabase/update_v5.sql` once to enable posts, vibes, vanishing posts and likes.
 Without it, chats still work and Home shows a message asking you to run the update.
+
+## Friends, suggestions, bios (friends-only chat, posts and profiles)
+Run `supabase/update_v6.sql` once (after v2-v5). People who already exchanged messages are made friends automatically.
+Until it is run, the app keeps working as before (everyone counts as a friend and friend buttons show a setup message).
