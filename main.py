@@ -12,7 +12,7 @@ from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.lang import Builder
 from kivy.metrics import dp
-from kivy.properties import BooleanProperty, ListProperty, NumericProperty, StringProperty
+from kivy.properties import BooleanProperty, ListProperty, NumericProperty, ObjectProperty, StringProperty
 from kivy.storage.jsonstore import JsonStore
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
@@ -401,26 +401,18 @@ KV = """
         text_size: self.width, None
         height: self.texture_size[1]
     MDBoxLayout:
+        id: poll_box
+        orientation: "vertical"
+        adaptive_height: True
+        spacing: dp(6)
+    MDLabel:
+        text: root.votes_text
+        font_style: "Caption"
+        theme_text_color: "Custom"
+        text_color: MUTED
         size_hint_y: None
-        height: dp(26) if root.vibe else 0
-        opacity: 1 if root.vibe else 0
-        PassCard:
-            size_hint: None, None
-            size: vl.texture_size[0] + dp(22), dp(24)
-            pos_hint: {"center_y": .5}
-            radius: [dp(12)]
-            elevation: 0
-            md_bg_color: root.vibe_color
-            padding: dp(11), 0
-            Label:
-                id: vl
-                text: root.vibe
-                font_size: "12sp"
-                bold: True
-                color: WHITE
-                size_hint: None, None
-                size: self.texture_size
-                pos_hint: {"center_y": .5}
+        text_size: self.width, None
+        height: self.texture_size[1] if self.text else 0
     MDLabel:
         text: (str(root.likes) + (" like" if root.likes == 1 else " likes")) if root.likes else ""
         font_style: "Caption"
@@ -660,6 +652,44 @@ KV = """
                     pos_hint: {"center_y": .5}
         Widget:
 
+<PollOption>:
+    size_hint_y: None
+    height: dp(42)
+    PassCard:
+        size_hint: 1, 1
+        pos_hint: {"x": 0, "y": 0}
+        radius: [dp(12)]
+        elevation: 0
+        md_bg_color: (0.93, 0.94, 0.96, 1)
+    PassCard:
+        size_hint: root.fill, 1
+        pos_hint: {"x": 0, "y": 0}
+        radius: [dp(12)]
+        elevation: 0
+        md_bg_color: (0.74, 0.85, 1.0, 1) if root.mine else (0.84, 0.87, 0.92, 1)
+    Label:
+        text: root.text
+        font_size: "14sp"
+        bold: root.mine
+        color: INK
+        halign: "left"
+        valign: "middle"
+        shorten: True
+        max_lines: 1
+        text_size: self.size
+        size_hint: .72, 1
+        pos_hint: {"x": .04, "y": 0}
+    Label:
+        text: root.pct_text
+        font_size: "13sp"
+        bold: True
+        color: MUTED
+        halign: "right"
+        valign: "middle"
+        text_size: self.size
+        size_hint: .2, 1
+        pos_hint: {"right": .97, "y": 0}
+
 <Bubble>:
     orientation: "horizontal"
     adaptive_height: True
@@ -741,6 +771,27 @@ KV = """
             size_hint_y: None
             text_size: self.width, None
             height: self.texture_size[1]
+    MDBoxLayout:
+        size_hint: None, None
+        size: (dp(44), dp(24)) if root.streak > 1 else (0, 0)
+        opacity: 1 if root.streak > 1 else 0
+        pos_hint: {"center_y": .5}
+        spacing: dp(2)
+        MDIcon:
+            icon: "fire"
+            size_hint: None, None
+            size: dp(20), dp(20)
+            pos_hint: {"center_y": .5}
+            theme_text_color: "Custom"
+            text_color: (0.98, 0.5, 0.1, 1)
+        Label:
+            text: str(root.streak)
+            font_size: "13sp"
+            bold: True
+            color: (0.98, 0.5, 0.1, 1)
+            size_hint: None, None
+            size: self.texture_size
+            pos_hint: {"center_y": .5}
     PassCard:
         size_hint: None, None
         size: (dp(26), dp(26)) if root.unread > 0 else (0, 0)
@@ -948,52 +999,6 @@ MDScreenManager:
                                 size_hint_y: None
                                 height: dp(126)
                                 padding: dp(10), 0
-                    MDBoxLayout:
-                        orientation: "vertical"
-                        adaptive_height: True
-                        md_bg_color: WHITE
-                        padding: dp(12), dp(10)
-                        ScrollView:
-                            size_hint_y: None
-                            height: dp(34)
-                            bar_width: 0
-                            do_scroll_y: False
-                            MDBoxLayout:
-                                orientation: "horizontal"
-                                adaptive_width: True
-                                size_hint_y: None
-                                height: dp(34)
-                                padding: dp(0), 0
-                                spacing: dp(8)
-                                Chip:
-                                    text: "All"
-                                    selected: app.vibe_filter == ""
-                                    on_release: app.set_vibe_filter("")
-                                Chip:
-                                    text: "Chill"
-                                    selected: app.vibe_filter == "chill"
-                                    on_release: app.set_vibe_filter("chill")
-                                    accent: (0.13, 0.70, 0.56, 1)
-                                Chip:
-                                    text: "Hyped"
-                                    selected: app.vibe_filter == "hyped"
-                                    on_release: app.set_vibe_filter("hyped")
-                                    accent: (0.98, 0.58, 0.16, 1)
-                                Chip:
-                                    text: "Focused"
-                                    selected: app.vibe_filter == "focused"
-                                    on_release: app.set_vibe_filter("focused")
-                                    accent: (0.40, 0.45, 0.90, 1)
-                                Chip:
-                                    text: "Grateful"
-                                    selected: app.vibe_filter == "grateful"
-                                    on_release: app.set_vibe_filter("grateful")
-                                    accent: (0.96, 0.36, 0.52, 1)
-                                Chip:
-                                    text: "Sleepy"
-                                    selected: app.vibe_filter == "sleepy"
-                                    on_release: app.set_vibe_filter("sleepy")
-                                    accent: (0.45, 0.55, 0.65, 1)
                     MDBoxLayout:
                         id: feed_list
                         orientation: "vertical"
@@ -1625,74 +1630,101 @@ MDScreenManager:
                         text_size: self.width, None
                         height: self.texture_size[1]
                     SectionLabel:
-                        text: "VIBE"
-                    ScrollView:
+                        text: "POLL"
+                    MDBoxLayout:
                         size_hint_y: None
                         height: dp(34)
-                        bar_width: 0
-                        do_scroll_y: False
-                        MDBoxLayout:
-                            orientation: "horizontal"
-                            adaptive_width: True
-                            size_hint_y: None
-                            height: dp(34)
-                            padding: dp(0), 0
-                            spacing: dp(8)
-                            Chip:
-                                text: "Chill"
-                                selected: app.post_vibe == "chill"
-                                on_release: app.set_post_vibe("chill")
-                                accent: (0.13, 0.70, 0.56, 1)
-                            Chip:
-                                text: "Hyped"
-                                selected: app.post_vibe == "hyped"
-                                on_release: app.set_post_vibe("hyped")
-                                accent: (0.98, 0.58, 0.16, 1)
-                            Chip:
-                                text: "Focused"
-                                selected: app.post_vibe == "focused"
-                                on_release: app.set_post_vibe("focused")
-                                accent: (0.40, 0.45, 0.90, 1)
-                            Chip:
-                                text: "Grateful"
-                                selected: app.post_vibe == "grateful"
-                                on_release: app.set_post_vibe("grateful")
-                                accent: (0.96, 0.36, 0.52, 1)
-                            Chip:
-                                text: "Sleepy"
-                                selected: app.post_vibe == "sleepy"
-                                on_release: app.set_post_vibe("sleepy")
-                                accent: (0.45, 0.55, 0.65, 1)
-                    SectionLabel:
-                        text: "VANISHES AFTER"
-                    ScrollView:
+                        Chip:
+                            text: "Ask your friends"
+                            selected: app.post_poll_on
+                            on_release: app.toggle_poll()
+                    MDBoxLayout:
+                        orientation: "vertical"
                         size_hint_y: None
-                        height: dp(34)
-                        bar_width: 0
-                        do_scroll_y: False
-                        MDBoxLayout:
-                            orientation: "horizontal"
-                            adaptive_width: True
+                        height: dp(194) if app.post_poll_on else 0
+                        opacity: 1 if app.post_poll_on else 0
+                        disabled: not app.post_poll_on
+                        spacing: dp(6)
+                        MDCard:
                             size_hint_y: None
-                            height: dp(34)
-                            padding: dp(0), 0
-                            spacing: dp(8)
-                            Chip:
-                                text: "1 hour"
-                                selected: app.post_hours == 1
-                                on_release: app.set_post_hours(1)
-                            Chip:
-                                text: "24 hours"
-                                selected: app.post_hours == 24
-                                on_release: app.set_post_hours(24)
-                            Chip:
-                                text: "7 days"
-                                selected: app.post_hours == 168
-                                on_release: app.set_post_hours(168)
-                            Chip:
-                                text: "Never"
-                                selected: app.post_hours == 0
-                                on_release: app.set_post_hours(0)
+                            height: dp(44)
+                            radius: [dp(22)]
+                            elevation: 0
+                            md_bg_color: (0.94, 0.945, 0.955, 1)
+                            padding: dp(16), 0
+                            TextInput:
+                                id: poll_opt0
+                                hint_text: "Option 1"
+                                multiline: False
+                                background_color: 0, 0, 0, 0
+                                background_normal: ""
+                                background_active: ""
+                                foreground_color: INK
+                                hint_text_color: MUTED
+                                cursor_color: PRIMARY
+                                font_size: "16sp"
+                                padding: [0, dp(12), 0, dp(12)]
+                                on_text: app.on_poll_text(self)
+                        MDCard:
+                            size_hint_y: None
+                            height: dp(44)
+                            radius: [dp(22)]
+                            elevation: 0
+                            md_bg_color: (0.94, 0.945, 0.955, 1)
+                            padding: dp(16), 0
+                            TextInput:
+                                id: poll_opt1
+                                hint_text: "Option 2"
+                                multiline: False
+                                background_color: 0, 0, 0, 0
+                                background_normal: ""
+                                background_active: ""
+                                foreground_color: INK
+                                hint_text_color: MUTED
+                                cursor_color: PRIMARY
+                                font_size: "16sp"
+                                padding: [0, dp(12), 0, dp(12)]
+                                on_text: app.on_poll_text(self)
+                        MDCard:
+                            size_hint_y: None
+                            height: dp(44)
+                            radius: [dp(22)]
+                            elevation: 0
+                            md_bg_color: (0.94, 0.945, 0.955, 1)
+                            padding: dp(16), 0
+                            TextInput:
+                                id: poll_opt2
+                                hint_text: "Option 3 (optional)"
+                                multiline: False
+                                background_color: 0, 0, 0, 0
+                                background_normal: ""
+                                background_active: ""
+                                foreground_color: INK
+                                hint_text_color: MUTED
+                                cursor_color: PRIMARY
+                                font_size: "16sp"
+                                padding: [0, dp(12), 0, dp(12)]
+                                on_text: app.on_poll_text(self)
+                        MDCard:
+                            size_hint_y: None
+                            height: dp(44)
+                            radius: [dp(22)]
+                            elevation: 0
+                            md_bg_color: (0.94, 0.945, 0.955, 1)
+                            padding: dp(16), 0
+                            TextInput:
+                                id: poll_opt3
+                                hint_text: "Option 4 (optional)"
+                                multiline: False
+                                background_color: 0, 0, 0, 0
+                                background_normal: ""
+                                background_active: ""
+                                foreground_color: INK
+                                hint_text_color: MUTED
+                                cursor_color: PRIMARY
+                                font_size: "16sp"
+                                padding: [0, dp(12), 0, dp(12)]
+                                on_text: app.on_poll_text(self)
 
     MDScreen:
         name: "note"
@@ -1958,15 +1990,6 @@ def badge_text(sec):
     return f"{h}h" if h < 24 else ""
 
 
-VIBES = [
-    ("chill", "Chill", (0.13, 0.70, 0.56, 1)),
-    ("hyped", "Hyped", (0.98, 0.58, 0.16, 1)),
-    ("focused", "Focused", (0.40, 0.45, 0.90, 1)),
-    ("grateful", "Grateful", (0.96, 0.36, 0.52, 1)),
-    ("sleepy", "Sleepy", (0.45, 0.55, 0.65, 1)),
-]
-VIBE_BY_KEY = {k: (label, list(color)) for k, label, color in VIBES}
-
 PROMPTS = [
     "What made you smile today?", "What is one small win you had this week?",
     "What song is stuck in your head right now?", "Describe your day in three words.",
@@ -2001,16 +2024,6 @@ def age_text(sec):
         return f"{m}m"
     h = m // 60
     return f"{h}h" if h < 24 else f"{h // 24}d"
-
-
-def expiry_text(sec):
-    if sec is None or sec <= 0:
-        return ""
-    m = int(sec // 60)
-    if m < 60:
-        return f"Vanishes in {max(m, 1)}m"
-    h = m // 60
-    return f"Vanishes in {h}h" if h < 24 else f"Vanishes in {h // 24}d"
 
 
 def is_friend(u):
@@ -2157,16 +2170,27 @@ class Supa:
     def set_bio(self, text):
         self._req("POST", "/rest/v1/rpc/set_bio", json={"p_bio": text})
 
-    def feed(self, vibe="", author=None):
-        payload = {"p_vibe": vibe or None, "p_limit": 40}
+    def feed(self, author=None):
+        payload = {"p_limit": 40}
         if author:
             payload["p_author"] = author
         return self._req("POST", "/rest/v1/rpc/get_feed", json=payload) or []
 
-    def create_post(self, body, vibe, prompt, hours):
-        self._req("POST", "/rest/v1/rpc/create_post",
-                  json={"p_body": body, "p_vibe": vibe or None, "p_prompt": prompt or None,
-                        "p_hours": int(hours) or None})
+    def create_post(self, body, prompt, poll=None):
+        payload = {"p_body": body, "p_prompt": prompt or None}
+        if poll:
+            payload["p_poll"] = poll
+        self._req("POST", "/rest/v1/rpc/create_post", json=payload)
+
+    def vote_poll(self, post_id, option):
+        return self._req("POST", "/rest/v1/rpc/vote_poll", json={"p_post": post_id, "p_option": int(option)}) or {}
+
+    def streaks(self):
+        try:
+            rows = self._req("POST", "/rest/v1/rpc/get_streaks", json={})
+            return {r["friend"]: int(r["days"]) for r in rows or []}
+        except RuntimeError:
+            return {}  # polls/streaks update not installed yet
 
     def toggle_like(self, post_id):
         rows = self._req("POST", "/rest/v1/rpc/toggle_like", json={"p_post": post_id})
@@ -2402,10 +2426,20 @@ class TabItem(ButtonBehavior, MDFloatLayout):
 
 
 class Chip(ButtonBehavior, MDBoxLayout):
-    """Pill-shaped choice (vibes, durations, filters)."""
+    """Pill-shaped choice (for example: add a poll)."""
     text = StringProperty("")
     selected = BooleanProperty(False)
     accent = ListProperty([0.094, 0.467, 0.949, 1])
+
+
+class PollOption(ButtonBehavior, MDFloatLayout):
+    """One answer in a poll: a bar that fills according to its share of the votes."""
+    text = StringProperty("")
+    idx = NumericProperty(0)
+    fill = NumericProperty(0)
+    pct_text = StringProperty("")
+    mine = BooleanProperty(False)
+    card = ObjectProperty(None)
 
 
 class PostCard(MDBoxLayout):
@@ -2417,8 +2451,10 @@ class PostCard(MDBoxLayout):
     meta = StringProperty("")
     prompt = StringProperty("")
     body = StringProperty("")
-    vibe = StringProperty("")
-    vibe_color = ListProperty([0.5, 0.5, 0.5, 1])
+    my_vote = NumericProperty(-1)
+    counts = ListProperty([])
+    poll_rows = ListProperty([])
+    votes_text = StringProperty("")
     likes = NumericProperty(0)
     liked = BooleanProperty(False)
     mine = BooleanProperty(False)
@@ -2453,6 +2489,7 @@ class ContactRow(ButtonBehavior, MDBoxLayout):
     initial = StringProperty("?")
     avatar_color = ListProperty([0, 0.52, 1, 1])
     unread = NumericProperty(0)
+    streak = NumericProperty(0)
     online = BooleanProperty(False)
 
 
@@ -2486,9 +2523,7 @@ class ChatApp(MDApp):
     view_status = StringProperty("none")
     view_primary = StringProperty("")
     view_secondary = StringProperty("")
-    vibe_filter = StringProperty("")
-    post_vibe = StringProperty("")
-    post_hours = NumericProperty(24)
+    post_poll_on = BooleanProperty(False)
     post_prompt = StringProperty("")
     post_ready = BooleanProperty(False)
     post_chars = StringProperty("0/500")
@@ -2514,6 +2549,7 @@ class ChatApp(MDApp):
         if self.store.exists("prefs"):
             self.prefs.update(self.store.get("prefs"))
         self.feed_req, self.feed_loaded, self.chat_from, self.user_from = 0, False, "feed", "people"
+        self.streaks = {}
         self.prompt_text = today_prompt()
         Window.softinput_mode = "below_target"
         Window.bind(on_keyboard=self._on_key)
@@ -2587,7 +2623,11 @@ class ChatApp(MDApp):
         self.peer_name = name_of(u)
         self.peer_initial = initial(self.peer_name)
         self.peer_active = is_online(u.get("seconds_ago"))
-        self.peer_status = presence_text(u.get("seconds_ago"))
+        parts = [presence_text(u.get("seconds_ago"))]
+        days = self.streaks.get(self.peer, 0)
+        if days > 1:
+            parts.append(f"{days}-day streak")
+        self.peer_status = " · ".join(x for x in parts if x)
 
     def heartbeat(self, dt):
         """Tell the server we are active (others see 'Active now')."""
@@ -2706,6 +2746,7 @@ class ChatApp(MDApp):
             self.root.current = "feed"
             self.refresh_feed()
             self.refresh_me()
+            self.refresh_streaks()
 
         self.bg(init, done)
 
@@ -2731,6 +2772,8 @@ class ChatApp(MDApp):
         self.tick += 1
         if self.tick % 12 == 0 and self.root.current == "feed":
             self.refresh_feed(silent=True)  # keep Home fresh (about every 30 seconds)
+        if self.tick % 24 == 0:
+            self.refresh_streaks()
 
         local = self.local
 
@@ -2804,7 +2847,7 @@ class ChatApp(MDApp):
             lst.add_widget(ContactRow(
                 name=name, subtitle=sub, initial=initial(name),
                 avatar_color=avatar_color(u["username"]), unread=self.unread.get(u["id"], 0),
-                online=is_online(u.get("seconds_ago")),
+                online=is_online(u.get("seconds_ago")), streak=self.streaks.get(u["id"], 0),
                 on_release=lambda x, uid=u["id"], n=name: self.open_chat(uid, n)))
         if not rows:
             lst.add_widget(MDLabel(
@@ -2966,6 +3009,7 @@ class ChatApp(MDApp):
             self.refresh_people()
         elif name == "contacts":
             self.refresh_contacts()
+            self.refresh_streaks()
         elif name == "me":
             self.refresh_me()
 
@@ -3146,7 +3190,7 @@ class ChatApp(MDApp):
 
         def work():
             try:
-                rows = self.api.feed("", uid)
+                rows = self.api.feed(uid)
             except RuntimeError:
                 rows = []
             return self.api.profile(uid), rows
@@ -3184,7 +3228,7 @@ class ChatApp(MDApp):
 
         def work():
             try:
-                rows = self.api.feed("", uid)
+                rows = self.api.feed(uid)
             except RuntimeError:
                 rows = []
             return self.api.profile(uid), rows
@@ -3215,7 +3259,7 @@ class ChatApp(MDApp):
         if not self.api.uid or not self.root:
             return
         self.feed_req += 1
-        req, vibe = self.feed_req, self.vibe_filter
+        req = self.feed_req
 
         def done(rows):
             if req == self.feed_req:  # ignore answers to an outdated filter
@@ -3230,7 +3274,7 @@ class ChatApp(MDApp):
             else:
                 self.feed_message("Could not load posts. Check your connection.")
 
-        self.bg(lambda: self.api.feed(vibe), done, fail)
+        self.bg(self.api.feed, done, fail)
 
     def feed_message(self, text):
         box = self.root.ids.feed_list
@@ -3240,15 +3284,77 @@ class ChatApp(MDApp):
 
     def post_card(self, r):
         name = (r.get("display_name") or r.get("username") or "?").strip()
-        vibe, vcolor = VIBE_BY_KEY.get(r.get("vibe") or "", ("", [0.5, 0.5, 0.5, 1]))
-        exp = expiry_text(r.get("expires_in"))
-        meta = age_text(r.get("age_seconds")) + (" · " + exp if exp else "")
-        return PostCard(
+        card = PostCard(
             pid=r["id"], author_id=r["author"], name=name, initial=initial(name),
-            color=avatar_color(r.get("username") or name), meta=meta,
+            color=avatar_color(r.get("username") or name), meta=age_text(r.get("age_seconds")),
             prompt=("Question of the day: " + r["prompt"]) if r.get("prompt") else "",
-            body=r["body"], vibe=vibe, vibe_color=vcolor, likes=int(r.get("likes") or 0),
-            liked=bool(r.get("liked")), mine=r["author"] == self.api.uid)
+            body=r["body"], likes=int(r.get("likes") or 0), liked=bool(r.get("liked")),
+            mine=r["author"] == self.api.uid)
+        poll = r.get("poll") or []
+        if poll:
+            votes = r.get("votes") or {}
+            card.counts = [int(votes.get(str(i), 0)) for i in range(len(poll))]
+            mv = r.get("my_vote")
+            card.my_vote = -1 if mv is None else int(mv)
+            rows = []
+            for i, text in enumerate(poll):
+                opt = PollOption(text=str(text), idx=i, card=card, on_release=lambda x: self.vote(x))
+                card.ids.poll_box.add_widget(opt)
+                rows.append(opt)
+            card.poll_rows = rows
+            self.update_poll_rows(card)
+        return card
+
+    def update_poll_rows(self, card):
+        total = sum(card.counts)
+        for opt in card.poll_rows:
+            n = card.counts[opt.idx] if opt.idx < len(card.counts) else 0
+            opt.fill = (n / total) if total else 0
+            opt.pct_text = f"{round(100 * n / total)}%" if total else ""
+            opt.mine = card.my_vote == opt.idx
+        card.votes_text = (f"{total} vote" + ("" if total == 1 else "s")) if card.poll_rows else ""
+
+    def vote(self, opt):
+        card = opt.card
+        old, new = int(card.my_vote), int(opt.idx)
+        if old == new:
+            return
+        counts = list(card.counts)
+        if 0 <= old < len(counts):
+            counts[old] = max(0, counts[old] - 1)
+        counts[new] += 1
+        card.counts, card.my_vote = counts, new  # show the vote instantly
+        self.update_poll_rows(card)
+        pid = int(card.pid)
+
+        def done(res):
+            if isinstance(res, dict) and res is not None:
+                card.counts = [int(res.get(str(i), 0)) for i in range(len(card.counts))]
+                self.update_poll_rows(card)
+
+        def fail(e):  # put the previous vote back
+            back = list(card.counts)
+            back[new] = max(0, back[new] - 1)
+            if 0 <= old < len(back):
+                back[old] += 1
+            card.counts, card.my_vote = back, old
+            self.update_poll_rows(card)
+            self.show_err(e)
+
+        self.bg(lambda: self.api.vote_poll(pid, new), done, fail)
+
+    def refresh_streaks(self):
+        """Chat streaks: days in a row both of you messaged (shown in Chats and the chat header)."""
+        if not self.api.uid:
+            return
+
+        def done(found):
+            if found != self.streaks:
+                self.streaks = found
+                self.update_peer_status()
+                self.refresh_contacts()
+
+        self.bg(self.api.streaks, done, lambda e: None)
 
     def render_feed(self, rows):
         self.feed_loaded = True
@@ -3259,10 +3365,6 @@ class ChatApp(MDApp):
         box.clear_widgets()
         for r in rows:
             box.add_widget(self.post_card(r))
-
-    def set_vibe_filter(self, key):
-        self.vibe_filter = key
-        self.refresh_feed()
 
     def toggle_like(self, card):
         card.liked = not card.liked
@@ -3308,7 +3410,9 @@ class ChatApp(MDApp):
     def open_compose(self, prompt=""):
         ids = self.root.ids
         ids.post_input.text = ""
-        self.post_prompt, self.post_vibe, self.post_hours = prompt, "", 24
+        self.post_prompt, self.post_poll_on = prompt, False
+        for i in range(4):
+            ids[f"poll_opt{i}"].text = ""
         self.post_ready, self.post_chars = False, "0/500"
         self.root.current = "compose"
         Clock.schedule_once(lambda dt: setattr(ids.post_input, "focus", True), 0.3)
@@ -3326,19 +3430,35 @@ class ChatApp(MDApp):
             widget.text = text[:500]
             return
         self.post_chars = f"{len(text)}/500"
-        self.post_ready = bool(text.strip())
+        self.recalc_post_ready()
 
-    def set_post_vibe(self, key):
-        self.post_vibe = "" if self.post_vibe == key else key  # tap again to clear
+    def poll_options(self):
+        ids = self.root.ids
+        return [o for o in (ids[f"poll_opt{i}"].text.strip()[:40] for i in range(4)) if o]
 
-    def set_post_hours(self, hours):
-        self.post_hours = hours
+    def recalc_post_ready(self):
+        ok = bool(self.root.ids.post_input.text.strip())
+        if ok and self.post_poll_on:
+            opts = self.poll_options()
+            ok = len(opts) >= 2 and len({o.lower() for o in opts}) == len(opts)
+        self.post_ready = ok
+
+    def toggle_poll(self):
+        self.post_poll_on = not self.post_poll_on
+        self.recalc_post_ready()
+
+    def on_poll_text(self, widget):
+        if len(widget.text) > 40:
+            widget.text = widget.text[:40]
+            return
+        self.recalc_post_ready()
 
     def share_post(self):
         text = self.root.ids.post_input.text.strip()
         if not text or not self.post_ready:
             return
-        vibe, hours, prompt = self.post_vibe, int(self.post_hours), self.post_prompt
+        prompt = self.post_prompt
+        poll = self.poll_options() if self.post_poll_on else []
         self.loading = True
 
         def done(_):
@@ -3349,11 +3469,13 @@ class ChatApp(MDApp):
         def fail(e):
             self.loading = False
             msg = str(e)
-            if "create_post" in msg or "schema cache" in msg:
+            if poll and ("p_poll" in msg or "create_post" in msg or "schema cache" in msg):
+                msg = "Polls are not set up yet. Run update_v7.sql in the Supabase SQL Editor."
+            elif "create_post" in msg or "schema cache" in msg:
                 msg = "Posts are not set up yet. Run update_v5.sql in the Supabase SQL Editor."
             self.notify(msg[:200])
 
-        self.bg(lambda: self.api.create_post(text, vibe, prompt, hours), done, fail)
+        self.bg(lambda: self.api.create_post(text, prompt, poll), done, fail)
 
     # ---------- notes (Messenger-style composer) ----------
     def open_note(self):

@@ -34,3 +34,7 @@ Without it, chats still work and Home shows a message asking you to run the upda
 ## Friends, suggestions, bios (friends-only chat, posts and profiles)
 Run `supabase/update_v6.sql` once (after v2-v5). People who already exchanged messages are made friends automatically.
 Until it is run, the app keeps working as before (everyone counts as a friend and friend buttons show a setup message).
+
+## Polls and chat streaks (replace vibes + vanishing posts)
+Run `supabase/update_v7.sql` once (after v2-v6). Posts can carry a poll; friends vote and see live results.
+Chats show a streak counter when both of you message on consecutive days.
