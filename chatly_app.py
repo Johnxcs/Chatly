@@ -21,12 +21,11 @@ from kivymd.uix.card import MDCard
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.label import MDLabel
 from kivymd.uix.screen import MDScreen
-from kivymd.uix.screenmanager import MDScreenManager
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
-from kivy.uix.screenmanager import NoTransition
+from kivy.uix.screenmanager import NoTransition, ScreenManager
 from kivy.uix.popup import Popup
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
@@ -2649,8 +2648,9 @@ class ChatApp(MDApp):
 
     def build_ui(self):
         """Load every style rule and page separately. A failure (or a crash last time) only switches that part off."""
-        sm = MDScreenManager()
-        sm.transition = NoTransition()
+        # Plain Kivy ScreenManager on purpose: KivyMD's MDScreenManager silently swaps any non-KivyMD
+        # transition for its own slide animation, so "no transition" never took effect with it.
+        sm = ScreenManager(transition=NoTransition())
         self.load_problems = []
         # A page that was loading or on screen when the app last died is switched off this time.
         for flag in ("loading.flag", "showing.flag"):
