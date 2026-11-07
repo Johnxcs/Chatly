@@ -43,3 +43,8 @@ Chats show a streak counter when both of you message on consecutive days.
 `main.py` is now a tiny launcher and the app lives in `chatly_app.py` (plus `errscreen.py`). If Chatly fails while loading,
 it shows the real error on screen with a "Copy error" button instead of closing. Errors that happen while you use the app
 are saved too: Menu > Settings > About > View error log > Copy.
+
+## If a page crashes the app
+Each page of the app now loads on its own. If one fails, it shows a message and the rest of the app still works.
+If the app dies while a page is loading or on screen, that page is switched off the next time you open the app
+(login is never switched off). On that page tap "Try this page again", then close and reopen the app.

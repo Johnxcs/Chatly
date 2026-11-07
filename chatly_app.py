@@ -20,8 +20,13 @@ from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.card import MDCard
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.label import MDLabel
+from kivymd.uix.screen import MDScreen
+from kivymd.uix.screenmanager import MDScreenManager
 from kivy.uix.behaviors import ButtonBehavior
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
 from kivy.uix.label import Label
+from kivy.uix.screenmanager import NoTransition
 from kivy.uix.popup import Popup
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
@@ -617,7 +622,7 @@ KV = """
             size: (pl.texture_size[0] + dp(30), dp(36)) if root.primary else (0, 0)
             pos_hint: {"center_y": .5}
             opacity: 1 if root.primary else 0
-            on_release: root.dispatch("on_primary")
+            on_release: root.dispatch("on_main_tap")
             PassCard:
                 radius: [dp(18)]
                 elevation: 0
@@ -637,7 +642,7 @@ KV = """
             size: (sl.texture_size[0] + dp(30), dp(36)) if root.secondary else (0, 0)
             pos_hint: {"center_y": .5}
             opacity: 1 if root.secondary else 0
-            on_release: root.dispatch("on_secondary")
+            on_release: root.dispatch("on_alt_tap")
             PassCard:
                 radius: [dp(18)]
                 elevation: 0
@@ -1124,8 +1129,8 @@ MDScreenManager:
                         stats: app.me_stats
                         primary: "Edit profile"
                         secondary: "New post"
-                        on_primary: app.open_profile()
-                        on_secondary: app.open_compose()
+                        on_main_tap: app.open_profile()
+                        on_alt_tap: app.open_compose()
                     MDBoxLayout:
                         size_hint_y: None
                         height: dp(34)
@@ -1186,8 +1191,8 @@ MDScreenManager:
                         stats: app.view_stats
                         primary: app.view_primary
                         secondary: app.view_secondary
-                        on_primary: app.view_primary_tap()
-                        on_secondary: app.view_secondary_tap()
+                        on_main_tap: app.view_primary_tap()
+                        on_alt_tap: app.view_secondary_tap()
                     MDBoxLayout:
                         size_hint_y: None
                         height: dp(34)
@@ -1961,6 +1966,27 @@ def fmt_time(ts):
         return str(ts)[11:16]
 
 
+def split_kv(kv):
+    """Split the layout text into style rules and one block per page, so one bad part cannot stop the app."""
+    root_at = kv.index("MDScreenManager:")
+    head, body = kv[:root_at], kv[root_at:]
+    directives = [ln for ln in head.splitlines() if ln.startswith("#:")]
+    rules_text = "\n".join(ln for ln in head.splitlines() if not ln.startswith("#:"))
+    rules = [r for r in re.split(r"(?m)^(?=<\w+>:)", rules_text) if r.strip()]
+    starts = [m.start() for m in re.finditer(r"(?m)^    MDScreen:\n", body)]
+    screens = []
+    for i, st in enumerate(starts):
+        block = body[st: starts[i + 1] if i + 1 < len(starts) else len(body)]
+        name = re.search(r'name: "(\w+)"', block).group(1)
+        text = "\n".join(ln[4:] if ln.startswith("    ") else ln for ln in block.rstrip("\n").splitlines()) + "\n"
+        screens.append((name, text))
+    return directives, rules, screens
+
+
+KV_DIRECTIVES, KV_RULES, KV_SCREENS = split_kv(KV)
+SCREEN_NAMES = [n for n, _ in KV_SCREENS]
+
+
 def name_of(u):
     return (u.get("display_name") or u.get("username") or "?").strip()
 
@@ -2367,6 +2393,14 @@ class PassCard(MDCard):
         return False
 
 
+class DummyWidget(MDBoxLayout):
+    """Stand-in for a widget on a page that failed to load, so the rest of the app keeps working."""
+    text = ""
+    active = False
+    focus = False
+    scroll_y = 0
+
+
 class AvatarDot(MDFloatLayout):
     """Round avatar with an initial and an optional green 'active' dot."""
     initial = StringProperty("?")
@@ -2402,7 +2436,7 @@ class PersonRow(ButtonBehavior, MDBoxLayout):
 
 class ProfileHeader(MDBoxLayout):
     """Avatar, name, bio, stats and two buttons; used for your own profile and for other people's."""
-    __events__ = ("on_primary", "on_secondary")
+    __events__ = ("on_main_tap", "on_alt_tap")  # NOT on_primary/on_secondary: Kivy would treat those as handlers for the primary/secondary properties
     initial = StringProperty("?")
     color = ListProperty([0, 0.52, 1, 1])
     name = StringProperty("")
@@ -2413,10 +2447,10 @@ class ProfileHeader(MDBoxLayout):
     primary = StringProperty("")
     secondary = StringProperty("")
 
-    def on_primary(self):
+    def on_main_tap(self):
         pass
 
-    def on_secondary(self):
+    def on_alt_tap(self):
         pass
 
 
@@ -2566,8 +2600,10 @@ class ChatApp(MDApp):
         self.ui_ok = True
         Window.softinput_mode = "below_target"
         Window.bind(on_keyboard=self._on_key)
+        self.skip_screens = set(self.store.get("bad_screens").get("names", [])) if self.store.exists("bad_screens") else set()
+        self.load_problems = []
         try:
-            return Builder.load_string(KV)
+            return self.build_ui()
         except Exception:
             import traceback
             tb = traceback.format_exc()
@@ -2578,6 +2614,7 @@ class ChatApp(MDApp):
     def on_start(self):
         if not self.ui_ok:
             return
+        Clock.schedule_once(self.startup_report, 1.5)
         Clock.schedule_interval(self.poll, 2.5)
         Clock.schedule_interval(self.heartbeat, 30)
         if self.store.exists("session"):
@@ -2585,6 +2622,104 @@ class ChatApp(MDApp):
             self.api.exp = 0
             self.loading = True
             self.bg(self.api.ensure, lambda _: self.enter_app(), self.restore_failed)
+
+    # ---------- startup safety ----------
+    def flag_path(self, name):
+        return os.path.join(self.user_data_dir, name)
+
+    def read_flag(self, name):
+        try:
+            with open(self.flag_path(name)) as f:
+                return f.read().strip()
+        except Exception:
+            return ""
+
+    def set_flag(self, name, value):
+        try:
+            with open(self.flag_path(name), "w") as f:
+                f.write(value)
+        except Exception:
+            pass
+
+    def clear_flag(self, name):
+        try:
+            os.remove(self.flag_path(name))
+        except OSError:
+            pass
+
+    def build_ui(self):
+        """Load every style rule and page separately. A failure (or a crash last time) only switches that part off."""
+        sm = MDScreenManager()
+        sm.transition = NoTransition()
+        self.load_problems = []
+        # A page that was loading or on screen when the app last died is switched off this time.
+        for flag in ("loading.flag", "showing.flag"):
+            name = self.read_flag(flag)
+            if name:
+                self.clear_flag(flag)
+                if name in SCREEN_NAMES and name != "login":
+                    self.skip_screens.add(name)
+        self.store.put("bad_screens", names=sorted(self.skip_screens))
+        head = "\n".join(KV_DIRECTIVES) + "\n"
+        for rule in KV_RULES:
+            try:
+                Builder.load_string(head + rule)
+            except Exception:
+                import traceback
+                self.log_crash(traceback.format_exc())
+                self.load_problems.append("style " + rule.strip().splitlines()[0])
+        for name, text in KV_SCREENS:
+            if name in self.skip_screens:
+                scr = self.placeholder_screen(
+                    name, text, "This page is switched off because the app crashed while opening it.")
+                self.load_problems.append(name + " (switched off)")
+            else:
+                self.set_flag("loading.flag", name)
+                try:
+                    scr = Builder.load_string(head + text)
+                except Exception:
+                    import traceback
+                    tb = traceback.format_exc()
+                    self.log_crash(tb)
+                    self.load_problems.append(name)
+                    scr = self.placeholder_screen(name, text, "This page could not load:\n" + tb.strip().splitlines()[-1])
+                self.clear_flag("loading.flag")
+            sm.add_widget(scr)
+            sm.ids.update(scr.ids)  # the app looks widgets up by id through the manager
+        sm.bind(current=self._screen_shown)
+        self._screen_shown(sm, "login")
+        return sm
+
+    def placeholder_screen(self, name, text, message):
+        scr = MDScreen(name=name)
+        box = BoxLayout(orientation="vertical", padding=dp(20), spacing=dp(12))
+        box.add_widget(Label(text=f"[{name}]\n{message}", color=(0.1, 0.1, 0.14, 1), halign="center",
+                             text_size=(Window.width - dp(40), None)))
+        btn = Button(text="Try this page again", size_hint_y=None, height=dp(52))
+        btn.bind(on_release=lambda *a: self.unskip(name))
+        box.add_widget(btn)
+        scr.add_widget(box)
+        for wid in re.findall(r"(?m)^\s+id:\s*(\w+)", text):
+            scr.ids[wid] = DummyWidget()
+        return scr
+
+    def unskip(self, name):
+        self.skip_screens.discard(name)
+        self.store.put("bad_screens", names=sorted(self.skip_screens))
+        self.notify("Close the app completely and open it again to load this page.")
+
+    def _screen_shown(self, sm, name):
+        """Remember which page is on screen; if the app dies within seconds, that page is switched off next time."""
+        self.set_flag("showing.flag", name)
+        ev = getattr(self, "_showing_ev", None)
+        if ev:
+            ev.cancel()
+        self._showing_ev = Clock.schedule_once(lambda dt: self.clear_flag("showing.flag"), 4)
+
+    def startup_report(self, dt):
+        if self.load_problems:
+            self.notify("Some pages could not load: " + ", ".join(self.load_problems[:6]) +
+                        ".\n\nThe rest of the app works. Details: Menu > Settings > About > View error log.")
 
     # ---------- error log ----------
     def log_crash(self, tb):
