@@ -38,3 +38,8 @@ Until it is run, the app keeps working as before (everyone counts as a friend an
 ## Polls and chat streaks (replace vibes + vanishing posts)
 Run `supabase/update_v7.sql` once (after v2-v6). Posts can carry a poll; friends vote and see live results.
 Chats show a streak counter when both of you message on consecutive days.
+
+## If the app crashes
+`main.py` is now a tiny launcher and the app lives in `chatly_app.py` (plus `errscreen.py`). If Chatly fails while loading,
+it shows the real error on screen with a "Copy error" button instead of closing. Errors that happen while you use the app
+are saved too: Menu > Settings > About > View error log > Copy.
