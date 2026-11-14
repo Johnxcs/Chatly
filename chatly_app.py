@@ -109,56 +109,6 @@ KV = """
             theme_text_color: "Custom"
             text_color: WHITE
 
-<StoryItem>:
-    orientation: "vertical"
-    size_hint: None, None
-    size: dp(86), dp(124)
-    padding: dp(4), 0
-    spacing: dp(3)
-    Label:
-        id: nmeas
-        text: root.note
-        font_size: "11sp"
-        size_hint: None, None
-        size: 0, 0
-        opacity: 0
-    PassCard:
-        size_hint: None, None
-        size: min(nmeas.texture_size[0] + dp(18), dp(78)), dp(26)
-        pos_hint: {"center_x": .5}
-        radius: [dp(13)]
-        elevation: 0
-        md_bg_color: (0.93, 0.94, 0.97, 1)
-        opacity: 1 if root.note else 0
-        padding: dp(8), 0
-        Label:
-            text: root.note
-            font_size: "11sp"
-            color: MUTED if root.placeholder else INK
-            halign: "center"
-            valign: "middle"
-            shorten: True
-            max_lines: 1
-            text_size: self.size
-    AvatarDot:
-        size: dp(60), dp(60)
-        pos_hint: {"center_x": .5}
-        initial: root.initial
-        color: root.color
-        online: root.online
-        badge: root.badge
-        plus: root.plus
-    Label:
-        text: root.name
-        font_size: "12sp"
-        color: INK
-        size_hint_y: None
-        height: dp(18)
-        halign: "center"
-        shorten: True
-        max_lines: 1
-        text_size: self.width, None
-
 <SectionLabel>:
     halign: "left"
     font_style: "Caption"
@@ -307,15 +257,14 @@ KV = """
         active: root.current == "feed"
         on_release: app.go_tab("feed")
     TabItem:
+        icon: "forum" if root.current == "communities" else "forum-outline"
+        active: root.current == "communities"
+        on_release: app.go_tab("communities")
+    TabItem:
         icon: "message-text" if root.current == "contacts" else "message-text-outline"
         active: root.current == "contacts"
         badge: app.unread_total
         on_release: app.go_tab("contacts")
-    TabItem:
-        icon: "account-multiple" if root.current == "people" else "account-multiple-outline"
-        active: root.current == "people"
-        badge: app.request_count
-        on_release: app.go_tab("people")
     TabItem:
         icon: "account-circle" if root.current == "me" else "account-circle-outline"
         active: root.current == "me"
@@ -343,135 +292,6 @@ KV = """
             size_hint: None, None
             size: self.texture_size
             pos_hint: {"center_y": .5}
-
-<PostCard>:
-    orientation: "vertical"
-    adaptive_height: True
-    md_bg_color: WHITE
-    padding: dp(14), dp(12), dp(14), dp(2)
-    spacing: dp(8)
-    TapBox:
-        size_hint_y: None
-        height: dp(46)
-        spacing: dp(10)
-        on_release: app.open_user(root.author_id)
-        AvatarDot:
-            size: dp(42), dp(42)
-            pos_hint: {"center_y": .5}
-            initial: root.initial
-            color: root.color
-        MDBoxLayout:
-            orientation: "vertical"
-            adaptive_height: True
-            pos_hint: {"center_y": .5}
-            MDLabel:
-                text: root.name
-                font_style: "Subtitle1"
-                bold: True
-                theme_text_color: "Custom"
-                text_color: INK
-                size_hint_y: None
-                text_size: self.width, None
-                height: self.texture_size[1]
-            MDLabel:
-                text: root.meta
-                font_style: "Caption"
-                theme_text_color: "Custom"
-                text_color: MUTED
-                size_hint_y: None
-                text_size: self.width, None
-                height: self.texture_size[1]
-        MDIconButton:
-            icon: "delete-outline"
-            pos_hint: {"center_y": .5}
-            opacity: 1 if root.mine else 0
-            disabled: not root.mine
-            theme_icon_color: "Custom"
-            icon_color: MUTED
-            on_release: app.confirm_delete_post(root)
-    MDLabel:
-        text: root.prompt
-        font_style: "Caption"
-        theme_text_color: "Custom"
-        text_color: PRIMARY
-        size_hint_y: None
-        text_size: self.width, None
-        height: self.texture_size[1] if self.text else 0
-        opacity: 1 if self.text else 0
-    MDLabel:
-        text: root.body
-        font_style: "Body1"
-        theme_text_color: "Custom"
-        text_color: INK
-        size_hint_y: None
-        text_size: self.width, None
-        height: self.texture_size[1]
-    MDBoxLayout:
-        id: poll_box
-        orientation: "vertical"
-        adaptive_height: True
-        spacing: dp(6)
-    MDLabel:
-        text: root.votes_text
-        font_style: "Caption"
-        theme_text_color: "Custom"
-        text_color: MUTED
-        size_hint_y: None
-        text_size: self.width, None
-        height: self.texture_size[1] if self.text else 0
-    MDLabel:
-        text: (str(root.likes) + (" like" if root.likes == 1 else " likes")) if root.likes else ""
-        font_style: "Caption"
-        theme_text_color: "Custom"
-        text_color: MUTED
-        size_hint_y: None
-        text_size: self.width, None
-        height: self.texture_size[1] if self.text else 0
-    MDBoxLayout:
-        size_hint_y: None
-        height: dp(1)
-        md_bg_color: LINE
-    MDBoxLayout:
-        size_hint_y: None
-        height: dp(44)
-        TapBox:
-            on_release: app.toggle_like(root)
-            Widget:
-            MDIcon:
-                icon: "thumb-up" if root.liked else "thumb-up-outline"
-                size_hint: None, None
-                size: dp(22), dp(22)
-                pos_hint: {"center_y": .5}
-                theme_text_color: "Custom"
-                text_color: PRIMARY if root.liked else MUTED
-            Label:
-                text: "  Like"
-                font_size: "14sp"
-                bold: True
-                color: PRIMARY if root.liked else MUTED
-                size_hint_x: None
-                width: self.texture_size[0]
-            Widget:
-        TapBox:
-            disabled: root.mine
-            opacity: 0 if root.mine else 1
-            on_release: app.reply_to_post(root)
-            Widget:
-            MDIcon:
-                icon: "message-text-outline"
-                size_hint: None, None
-                size: dp(22), dp(22)
-                pos_hint: {"center_y": .5}
-                theme_text_color: "Custom"
-                text_color: MUTED
-            Label:
-                text: "  Reply privately"
-                font_size: "14sp"
-                bold: True
-                color: MUTED
-                size_hint_x: None
-                width: self.texture_size[0]
-            Widget:
 
 <PersonRow>:
     orientation: "horizontal"
@@ -658,43 +478,214 @@ KV = """
                     pos_hint: {"center_y": .5}
         Widget:
 
-<PollOption>:
-    size_hint_y: None
-    height: dp(42)
-    PassCard:
-        size_hint: 1, 1
-        pos_hint: {"x": 0, "y": 0}
-        radius: [dp(12)]
-        elevation: 0
-        md_bg_color: (0.93, 0.94, 0.96, 1)
-    PassCard:
-        size_hint: root.fill, 1
-        pos_hint: {"x": 0, "y": 0}
-        radius: [dp(12)]
-        elevation: 0
-        md_bg_color: (0.74, 0.85, 1.0, 1) if root.mine else (0.84, 0.87, 0.92, 1)
-    Label:
-        text: root.text
-        font_size: "14sp"
-        bold: root.mine
-        color: INK
-        halign: "left"
-        valign: "middle"
-        shorten: True
-        max_lines: 1
-        text_size: self.size
-        size_hint: .72, 1
-        pos_hint: {"x": .04, "y": 0}
-    Label:
-        text: root.pct_text
-        font_size: "13sp"
+<ThreadCard>:
+    orientation: "vertical"
+    adaptive_height: True
+    md_bg_color: (0.95, 0.96, 0.98, 1) if self.state == "down" else WHITE
+    padding: dp(14), dp(12), dp(14), dp(4)
+    spacing: dp(6)
+    MDLabel:
+        text: root.community
+        font_style: "Caption"
         bold: True
-        color: MUTED
-        halign: "right"
-        valign: "middle"
-        text_size: self.size
-        size_hint: .2, 1
-        pos_hint: {"right": .97, "y": 0}
+        theme_text_color: "Custom"
+        text_color: PRIMARY
+        size_hint_y: None
+        text_size: self.width, None
+        height: self.texture_size[1]
+    MDLabel:
+        text: root.title
+        font_style: "Subtitle1"
+        bold: True
+        theme_text_color: "Custom"
+        text_color: INK
+        size_hint_y: None
+        text_size: self.width, None
+        height: self.texture_size[1]
+    MDLabel:
+        text: root.snippet
+        font_style: "Body2"
+        theme_text_color: "Custom"
+        text_color: MUTED
+        size_hint_y: None
+        text_size: self.width, None
+        height: self.texture_size[1] if self.text else 0
+        opacity: 1 if self.text else 0
+    MDBoxLayout:
+        size_hint_y: None
+        height: dp(40)
+        spacing: dp(4)
+        TapBox:
+            size_hint: None, None
+            size: dp(70), dp(34)
+            pos_hint: {"center_y": .5}
+            on_release: app.vote_thread_card(root)
+            MDIcon:
+                icon: "arrow-up-bold" if root.voted else "arrow-up-bold-outline"
+                size_hint: None, None
+                size: dp(22), dp(22)
+                pos_hint: {"center_y": .5}
+                theme_text_color: "Custom"
+                text_color: PRIMARY if root.voted else MUTED
+            Label:
+                text: " " + str(root.votes)
+                font_size: "14sp"
+                bold: True
+                color: PRIMARY if root.voted else MUTED
+                size_hint_x: None
+                width: self.texture_size[0]
+        MDIcon:
+            icon: "comment-outline"
+            size_hint: None, None
+            size: dp(20), dp(20)
+            pos_hint: {"center_y": .5}
+            theme_text_color: "Custom"
+            text_color: MUTED
+        Label:
+            text: " " + str(root.replies)
+            font_size: "14sp"
+            color: MUTED
+            size_hint_x: None
+            width: self.texture_size[0]
+        Widget:
+        MDLabel:
+            text: root.name + " · " + root.meta
+            font_style: "Caption"
+            halign: "right"
+            shorten: True
+            max_lines: 1
+            theme_text_color: "Custom"
+            text_color: MUTED
+            size_hint: None, None
+            width: dp(150)
+            text_size: self.width, None
+            height: self.texture_size[1]
+            pos_hint: {"center_y": .5}
+
+<ReplyCard>:
+    orientation: "vertical"
+    adaptive_height: True
+    md_bg_color: WHITE
+    padding: dp(14), dp(10), dp(14), dp(2)
+    spacing: dp(4)
+    TapBox:
+        size_hint_y: None
+        height: dp(40)
+        spacing: dp(10)
+        on_release: app.open_user(root.author_id)
+        AvatarDot:
+            size: dp(32), dp(32)
+            pos_hint: {"center_y": .5}
+            initial: root.initial
+            color: root.color
+        MDLabel:
+            text: root.name + " · " + root.meta
+            font_style: "Caption"
+            bold: True
+            theme_text_color: "Custom"
+            text_color: INK
+            size_hint_y: None
+            text_size: self.width, None
+            height: self.texture_size[1]
+            pos_hint: {"center_y": .5}
+    MDLabel:
+        text: root.body
+        font_style: "Body1"
+        theme_text_color: "Custom"
+        text_color: INK
+        size_hint_y: None
+        text_size: self.width, None
+        height: self.texture_size[1]
+    MDBoxLayout:
+        size_hint_y: None
+        height: dp(38)
+        TapBox:
+            size_hint: None, None
+            size: dp(70), dp(34)
+            pos_hint: {"center_y": .5}
+            on_release: app.vote_reply_card(root)
+            MDIcon:
+                icon: "arrow-up-bold" if root.voted else "arrow-up-bold-outline"
+                size_hint: None, None
+                size: dp(22), dp(22)
+                pos_hint: {"center_y": .5}
+                theme_text_color: "Custom"
+                text_color: PRIMARY if root.voted else MUTED
+            Label:
+                text: " " + str(root.votes)
+                font_size: "14sp"
+                bold: True
+                color: PRIMARY if root.voted else MUTED
+                size_hint_x: None
+                width: self.texture_size[0]
+        Widget:
+        TapBox:
+            size_hint: None, None
+            size: (dp(44), dp(34)) if root.can_delete else (0, 0)
+            pos_hint: {"center_y": .5}
+            opacity: 1 if root.can_delete else 0
+            disabled: not root.can_delete
+            on_release: app.confirm_delete_reply(root)
+            MDIcon:
+                icon: "delete-outline"
+                size_hint: None, None
+                size: dp(22), dp(22)
+                pos_hint: {"center_y": .5}
+                theme_text_color: "Custom"
+                text_color: MUTED
+
+<CommunityRow>:
+    orientation: "horizontal"
+    size_hint_y: None
+    height: dp(78)
+    padding: dp(14), dp(10)
+    spacing: dp(12)
+    md_bg_color: (0.95, 0.96, 0.98, 1) if self.state == "down" else WHITE
+    AvatarDot:
+        size: dp(52), dp(52)
+        pos_hint: {"center_y": .5}
+        initial: root.initial
+        color: root.color
+    MDBoxLayout:
+        orientation: "vertical"
+        adaptive_height: True
+        pos_hint: {"center_y": .5}
+        MDLabel:
+            text: root.name
+            font_style: "Subtitle1"
+            bold: True
+            theme_text_color: "Custom"
+            text_color: INK
+            size_hint_y: None
+            text_size: self.width, None
+            height: self.texture_size[1]
+        MDLabel:
+            text: root.subtitle
+            font_style: "Caption"
+            theme_text_color: "Custom"
+            text_color: MUTED
+            size_hint_y: None
+            text_size: self.width, None
+            height: self.texture_size[1]
+    TapBox:
+        size_hint: None, None
+        size: jl.texture_size[0] + dp(30), dp(36)
+        pos_hint: {"center_y": .5}
+        on_release: app.toggle_member(root)
+        PassCard:
+            radius: [dp(18)]
+            elevation: 0
+            md_bg_color: (0.91, 0.92, 0.94, 1) if root.joined else PRIMARY
+            padding: dp(15), 0
+            Label:
+                id: jl
+                text: root.action
+                font_size: "13sp"
+                bold: True
+                color: INK if root.joined else WHITE
+                size_hint: None, None
+                size: self.texture_size
+                pos_hint: {"center_y": .5}
 
 <Bubble>:
     orientation: "horizontal"
@@ -845,7 +836,7 @@ MDScreenManager:
                     size_hint_y: None
                     height: dp(36)
                 MDLabel:
-                    text: "Chat with friends, instantly"
+                    text: "Communities, threads and messages"
                     halign: "center"
                     font_style: "Body2"
                     theme_text_color: "Custom"
@@ -883,7 +874,7 @@ MDScreenManager:
                             disabled: not app.signup_mode
                             MDTextField:
                                 id: display_field
-                                hint_text: "Display name (shown to friends)"
+                                hint_text: "Display name (shown to other members)"
                                 mode: "rectangle"
                             MDTextField:
                                 id: username_field
@@ -949,62 +940,27 @@ MDScreenManager:
                                 md_bg_color: (0.94, 0.945, 0.955, 1)
                                 padding: dp(16), 0
                                 Label:
-                                    text: "What's on your mind?"
+                                    text: "Start a thread..."
                                     font_size: "15sp"
                                     color: MUTED
                                     size_hint: None, None
                                     size: self.texture_size
                                     pos_hint: {"center_y": .5}
                     MDBoxLayout:
-                        orientation: "vertical"
-                        adaptive_height: True
+                        size_hint_y: None
+                        height: dp(54)
                         md_bg_color: WHITE
-                        padding: dp(14), dp(12)
-                        spacing: dp(6)
-                        SectionLabel:
-                            text: "QUESTION OF THE DAY"
-                        MDLabel:
-                            text: app.prompt_text
-                            font_style: "Subtitle1"
-                            bold: True
-                            theme_text_color: "Custom"
-                            text_color: INK
-                            size_hint_y: None
-                            text_size: self.width, None
-                            height: self.texture_size[1]
-                        TapBox:
-                            size_hint: None, None
-                            size: dp(110), dp(36)
-                            on_release: app.answer_prompt()
-                            PassCard:
-                                radius: [dp(18)]
-                                elevation: 0
-                                md_bg_color: PRIMARY
-                                Label:
-                                    text: "Answer"
-                                    font_size: "14sp"
-                                    bold: True
-                                    color: WHITE
-                                    text_size: self.size
-                                    halign: "center"
-                                    valign: "middle"
-                    MDBoxLayout:
-                        orientation: "vertical"
-                        adaptive_height: True
-                        md_bg_color: WHITE
-                        ScrollView:
-                            id: rail_sv
-                            size_hint_y: None
-                            height: dp(126)
-                            bar_width: 0
-                            do_scroll_y: False
-                            MDBoxLayout:
-                                id: rail
-                                orientation: "horizontal"
-                                adaptive_width: True
-                                size_hint_y: None
-                                height: dp(126)
-                                padding: dp(10), 0
+                        padding: dp(12), dp(10)
+                        spacing: dp(8)
+                        Chip:
+                            text: "New"
+                            selected: app.feed_sort == "new"
+                            on_release: app.set_sort("new")
+                        Chip:
+                            text: "Top"
+                            selected: app.feed_sort == "top"
+                            on_release: app.set_sort("top")
+                        Widget:
                     MDBoxLayout:
                         id: feed_list
                         orientation: "vertical"
@@ -1012,58 +968,13 @@ MDScreenManager:
                         spacing: dp(8)
 
     MDScreen:
-        name: "contacts"
-        md_bg_color: WHITE
-        MDBoxLayout:
-            orientation: "vertical"
-            TopBar:
-            TabBar:
-                current: "contacts"
-            MDBoxLayout:
-                size_hint_y: None
-                height: dp(60)
-                padding: dp(16), dp(6)
-                MDCard:
-                    radius: [dp(22)]
-                    elevation: 0
-                    md_bg_color: (0.94, 0.95, 0.97, 1)
-                    padding: dp(14), 0
-                    spacing: dp(8)
-                    MDIcon:
-                        icon: "magnify"
-                        size_hint: None, None
-                        size: dp(24), dp(24)
-                        pos_hint: {"center_y": .5}
-                        theme_text_color: "Custom"
-                        text_color: MUTED
-                    TextInput:
-                        id: search_field
-                        hint_text: "Search people"
-                        multiline: False
-                        background_color: 0, 0, 0, 0
-                        background_normal: ""
-                        background_active: ""
-                        foreground_color: INK
-                        hint_text_color: MUTED
-                        cursor_color: PRIMARY
-                        font_size: "16sp"
-                        padding: [0, dp(12), 0, dp(12)]
-                        on_text: app.refresh_contacts()
-            ScrollView:
-                bar_width: 0
-                MDBoxLayout:
-                    id: contact_list
-                    orientation: "vertical"
-                    adaptive_height: True
-
-    MDScreen:
-        name: "people"
+        name: "communities"
         md_bg_color: BG
         MDBoxLayout:
             orientation: "vertical"
             TopBar:
             TabBar:
-                current: "people"
+                current: "communities"
             MDBoxLayout:
                 size_hint_y: None
                 height: dp(60)
@@ -1083,8 +994,8 @@ MDScreenManager:
                         theme_text_color: "Custom"
                         text_color: MUTED
                     TextInput:
-                        id: people_search
-                        hint_text: "Find people"
+                        id: comm_search
+                        hint_text: "Search communities"
                         multiline: False
                         background_color: 0, 0, 0, 0
                         background_normal: ""
@@ -1094,15 +1005,90 @@ MDScreenManager:
                         cursor_color: PRIMARY
                         font_size: "16sp"
                         padding: [0, dp(12), 0, dp(12)]
-                        on_text: app.refresh_people()
+                        on_text: app.render_communities()
+            TapBox:
+                size_hint_y: None
+                height: dp(52)
+                on_release: app.open_new_community()
+                PassCard:
+                    md_bg_color: WHITE
+                    padding: dp(16), 0
+                    spacing: dp(10)
+                    MDIcon:
+                        icon: "plus-circle-outline"
+                        size_hint: None, None
+                        size: dp(26), dp(26)
+                        pos_hint: {"center_y": .5}
+                        theme_text_color: "Custom"
+                        text_color: PRIMARY
+                    Label:
+                        text: "Create a community"
+                        font_size: "15sp"
+                        bold: True
+                        color: PRIMARY
+                        size_hint: None, None
+                        size: self.texture_size
+                        pos_hint: {"center_y": .5}
             ScrollView:
                 bar_width: 0
                 do_scroll_x: False
                 MDBoxLayout:
-                    id: people_list
+                    id: comm_list
                     orientation: "vertical"
                     adaptive_height: True
                     spacing: dp(1)
+
+    MDScreen:
+        name: "contacts"
+        md_bg_color: WHITE
+        MDBoxLayout:
+            orientation: "vertical"
+            TopBar:
+            TabBar:
+                current: "contacts"
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(60)
+                padding: dp(16), dp(6), dp(8), dp(6)
+                spacing: dp(4)
+                MDCard:
+                    radius: [dp(22)]
+                    elevation: 0
+                    md_bg_color: (0.94, 0.95, 0.97, 1)
+                    padding: dp(14), 0
+                    spacing: dp(8)
+                    MDIcon:
+                        icon: "magnify"
+                        size_hint: None, None
+                        size: dp(24), dp(24)
+                        pos_hint: {"center_y": .5}
+                        theme_text_color: "Custom"
+                        text_color: MUTED
+                    TextInput:
+                        id: search_field
+                        hint_text: "Search conversations"
+                        multiline: False
+                        background_color: 0, 0, 0, 0
+                        background_normal: ""
+                        background_active: ""
+                        foreground_color: INK
+                        hint_text_color: MUTED
+                        cursor_color: PRIMARY
+                        font_size: "16sp"
+                        padding: [0, dp(12), 0, dp(12)]
+                        on_text: app.refresh_contacts()
+                MDIconButton:
+                    icon: "message-plus-outline"
+                    pos_hint: {"center_y": .5}
+                    theme_icon_color: "Custom"
+                    icon_color: PRIMARY
+                    on_release: app.open_people()
+            ScrollView:
+                bar_width: 0
+                MDBoxLayout:
+                    id: contact_list
+                    orientation: "vertical"
+                    adaptive_height: True
 
     MDScreen:
         name: "me"
@@ -1127,7 +1113,7 @@ MDScreenManager:
                         bio: app.me_bio
                         stats: app.me_stats
                         primary: "Edit profile"
-                        secondary: "New post"
+                        secondary: "New thread"
                         on_main_tap: app.open_profile()
                         on_alt_tap: app.open_compose()
                     MDBoxLayout:
@@ -1135,7 +1121,7 @@ MDScreenManager:
                         height: dp(34)
                         padding: dp(14), dp(8), dp(14), 0
                         SectionLabel:
-                            text: "MY POSTS"
+                            text: "MY THREADS"
                     MDBoxLayout:
                         id: me_posts
                         orientation: "vertical"
@@ -1197,7 +1183,7 @@ MDScreenManager:
                         height: dp(34)
                         padding: dp(14), dp(8), dp(14), 0
                         SectionLabel:
-                            text: "POSTS"
+                            text: "THREADS"
                     MDBoxLayout:
                         id: user_posts
                         orientation: "vertical"
@@ -1282,7 +1268,7 @@ MDScreenManager:
                         SwitchRow:
                             id: active_row
                             title: "Show when I'm active"
-                            subtitle: "Friends can see when you are online"
+                            subtitle: "Members can see when you are online"
                             on_active: app.set_show_active(self.active)
                     SectionLabel:
                         text: "CHATS"
@@ -1292,11 +1278,6 @@ MDScreenManager:
                         md_bg_color: WHITE
                         radius: [dp(16)]
                         padding: dp(16), dp(4)
-                        SwitchRow:
-                            id: rail_row
-                            title: "Active friends strip"
-                            subtitle: "Show friends and notes at the top of Chats"
-                            on_active: app.set_pref("rail", self.active)
                         SwitchRow:
                             id: preview_row
                             title: "Message previews"
@@ -1448,7 +1429,7 @@ MDScreenManager:
                             hint_text: "Bio (up to 150 characters)"
                             mode: "rectangle"
                         MDLabel:
-                            text: "Your name and bio are shown to your friends."
+                            text: "Your name and bio are visible to everyone on the forum."
                             font_style: "Caption"
                             theme_text_color: "Custom"
                             text_color: MUTED
@@ -1539,6 +1520,392 @@ MDScreenManager:
                             on_release: app.change_password()
 
     MDScreen:
+        name: "people"
+        md_bg_color: WHITE
+        MDBoxLayout:
+            orientation: "vertical"
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(64)
+                md_bg_color: WHITE
+                padding: dp(4), dp(6), dp(12), dp(6)
+                spacing: dp(6)
+                MDIconButton:
+                    icon: "arrow-left"
+                    pos_hint: {"center_y": .5}
+                    theme_icon_color: "Custom"
+                    icon_color: INK
+                    on_release: app.close_people()
+                MDLabel:
+                    text: "New message"
+                    font_style: "H6"
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: INK
+                    size_hint_y: None
+                    text_size: self.width, None
+                    height: self.texture_size[1]
+                    pos_hint: {"center_y": .5}
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(1)
+                md_bg_color: LINE
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(60)
+                padding: dp(16), dp(6)
+                MDCard:
+                    radius: [dp(22)]
+                    elevation: 0
+                    md_bg_color: (0.94, 0.95, 0.97, 1)
+                    padding: dp(14), 0
+                    spacing: dp(8)
+                    MDIcon:
+                        icon: "magnify"
+                        size_hint: None, None
+                        size: dp(24), dp(24)
+                        pos_hint: {"center_y": .5}
+                        theme_text_color: "Custom"
+                        text_color: MUTED
+                    TextInput:
+                        id: people_search
+                        hint_text: "Find people"
+                        multiline: False
+                        background_color: 0, 0, 0, 0
+                        background_normal: ""
+                        background_active: ""
+                        foreground_color: INK
+                        hint_text_color: MUTED
+                        cursor_color: PRIMARY
+                        font_size: "16sp"
+                        padding: [0, dp(12), 0, dp(12)]
+                        on_text: app.refresh_people()
+            ScrollView:
+                bar_width: 0
+                MDBoxLayout:
+                    id: people_list
+                    orientation: "vertical"
+                    adaptive_height: True
+                    spacing: dp(1)
+
+    MDScreen:
+        name: "community"
+        md_bg_color: BG
+        MDBoxLayout:
+            orientation: "vertical"
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(64)
+                md_bg_color: WHITE
+                padding: dp(4), dp(6), dp(12), dp(6)
+                spacing: dp(6)
+                MDIconButton:
+                    icon: "arrow-left"
+                    pos_hint: {"center_y": .5}
+                    theme_icon_color: "Custom"
+                    icon_color: INK
+                    on_release: app.close_community()
+                MDLabel:
+                    text: app.comm_name
+                    font_style: "H6"
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: INK
+                    size_hint_y: None
+                    text_size: self.width, None
+                    height: self.texture_size[1]
+                    pos_hint: {"center_y": .5}
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(1)
+                md_bg_color: LINE
+            ScrollView:
+                bar_width: 0
+                do_scroll_x: False
+                MDBoxLayout:
+                    orientation: "vertical"
+                    adaptive_height: True
+                    spacing: dp(8)
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        adaptive_height: True
+                        md_bg_color: WHITE
+                        padding: dp(16), dp(20), dp(16), dp(16)
+                        spacing: dp(8)
+                        AvatarDot:
+                            size: dp(72), dp(72)
+                            pos_hint: {"center_x": .5}
+                            initial: app.comm_initial
+                            color: app.comm_color
+                        MDLabel:
+                            text: app.comm_desc
+                            font_style: "Body2"
+                            halign: "center"
+                            theme_text_color: "Custom"
+                            text_color: INK
+                            size_hint_y: None
+                            text_size: self.width, None
+                            height: self.texture_size[1]
+                        MDLabel:
+                            text: app.comm_members
+                            font_style: "Caption"
+                            bold: True
+                            halign: "center"
+                            theme_text_color: "Custom"
+                            text_color: MUTED
+                            size_hint_y: None
+                            text_size: self.width, None
+                            height: self.texture_size[1]
+                        MDBoxLayout:
+                            size_hint_y: None
+                            height: dp(46)
+                            spacing: dp(10)
+                            padding: dp(6), dp(4)
+                            Widget:
+                            TapBox:
+                                size_hint: None, None
+                                size: dp(104), dp(38)
+                                pos_hint: {"center_y": .5}
+                                on_release: app.comm_toggle()
+                                PassCard:
+                                    radius: [dp(19)]
+                                    elevation: 0
+                                    md_bg_color: (0.91, 0.92, 0.94, 1) if app.comm_joined else PRIMARY
+                                    Label:
+                                        text: app.comm_action
+                                        font_size: "15sp"
+                                        bold: True
+                                        color: INK if app.comm_joined else WHITE
+                                        text_size: self.size
+                                        halign: "center"
+                                        valign: "middle"
+                            TapBox:
+                                size_hint: None, None
+                                size: dp(116), dp(38)
+                                pos_hint: {"center_y": .5}
+                                on_release: app.open_compose(app.comm_id)
+                                PassCard:
+                                    radius: [dp(19)]
+                                    elevation: 0
+                                    md_bg_color: PRIMARY
+                                    Label:
+                                        text: "New thread"
+                                        font_size: "15sp"
+                                        bold: True
+                                        color: WHITE
+                                        text_size: self.size
+                                        halign: "center"
+                                        valign: "middle"
+                            Widget:
+                    MDBoxLayout:
+                        size_hint_y: None
+                        height: dp(34)
+                        padding: dp(14), dp(8), dp(14), 0
+                        SectionLabel:
+                            text: "THREADS"
+                    MDBoxLayout:
+                        id: comm_threads
+                        orientation: "vertical"
+                        adaptive_height: True
+                        spacing: dp(8)
+
+    MDScreen:
+        name: "thread"
+        md_bg_color: BG
+        MDBoxLayout:
+            orientation: "vertical"
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(64)
+                md_bg_color: WHITE
+                padding: dp(4), dp(6), dp(12), dp(6)
+                spacing: dp(6)
+                MDIconButton:
+                    icon: "arrow-left"
+                    pos_hint: {"center_y": .5}
+                    theme_icon_color: "Custom"
+                    icon_color: INK
+                    on_release: app.close_thread()
+                MDLabel:
+                    text: "Thread"
+                    font_style: "H6"
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: INK
+                    size_hint_y: None
+                    text_size: self.width, None
+                    height: self.texture_size[1]
+                    pos_hint: {"center_y": .5}
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(1)
+                md_bg_color: LINE
+            ScrollView:
+                id: thread_scroll
+                bar_width: 0
+                do_scroll_x: False
+                MDBoxLayout:
+                    orientation: "vertical"
+                    adaptive_height: True
+                    spacing: dp(8)
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        adaptive_height: True
+                        md_bg_color: WHITE
+                        padding: dp(16), dp(14), dp(16), dp(6)
+                        spacing: dp(8)
+                        TapBox:
+                            size_hint_y: None
+                            height: dp(22)
+                            on_release: app.open_thread_community()
+                            MDLabel:
+                                text: app.thread_community
+                                font_style: "Caption"
+                                bold: True
+                                theme_text_color: "Custom"
+                                text_color: PRIMARY
+                                size_hint_y: None
+                                text_size: self.width, None
+                                height: self.texture_size[1]
+                                pos_hint: {"center_y": .5}
+                        MDLabel:
+                            text: app.thread_title
+                            font_style: "H6"
+                            bold: True
+                            theme_text_color: "Custom"
+                            text_color: INK
+                            size_hint_y: None
+                            text_size: self.width, None
+                            height: self.texture_size[1]
+                        TapBox:
+                            size_hint_y: None
+                            height: dp(44)
+                            spacing: dp(10)
+                            on_release: app.open_user(app.thread_author_id)
+                            AvatarDot:
+                                size: dp(36), dp(36)
+                                pos_hint: {"center_y": .5}
+                                initial: app.thread_initial
+                                color: app.thread_color
+                            MDLabel:
+                                text: app.thread_name + " · " + app.thread_meta
+                                font_style: "Caption"
+                                bold: True
+                                theme_text_color: "Custom"
+                                text_color: MUTED
+                                size_hint_y: None
+                                text_size: self.width, None
+                                height: self.texture_size[1]
+                                pos_hint: {"center_y": .5}
+                        MDLabel:
+                            text: app.thread_body
+                            font_style: "Body1"
+                            theme_text_color: "Custom"
+                            text_color: INK
+                            size_hint_y: None
+                            text_size: self.width, None
+                            height: self.texture_size[1]
+                        MDBoxLayout:
+                            size_hint_y: None
+                            height: dp(44)
+                            spacing: dp(6)
+                            TapBox:
+                                size_hint: None, None
+                                size: dp(84), dp(34)
+                                pos_hint: {"center_y": .5}
+                                on_release: app.vote_thread_page()
+                                MDIcon:
+                                    icon: "arrow-up-bold" if app.thread_voted else "arrow-up-bold-outline"
+                                    size_hint: None, None
+                                    size: dp(22), dp(22)
+                                    pos_hint: {"center_y": .5}
+                                    theme_text_color: "Custom"
+                                    text_color: PRIMARY if app.thread_voted else MUTED
+                                Label:
+                                    text: " " + str(app.thread_votes)
+                                    font_size: "14sp"
+                                    bold: True
+                                    color: PRIMARY if app.thread_voted else MUTED
+                                    size_hint_x: None
+                                    width: self.texture_size[0]
+                            MDIcon:
+                                icon: "comment-outline"
+                                size_hint: None, None
+                                size: dp(22), dp(22)
+                                pos_hint: {"center_y": .5}
+                                theme_text_color: "Custom"
+                                text_color: MUTED
+                            Label:
+                                text: " " + str(app.thread_replies)
+                                font_size: "14sp"
+                                color: MUTED
+                                size_hint_x: None
+                                width: self.texture_size[0]
+                            Widget:
+                            TapBox:
+                                size_hint: None, None
+                                size: (dp(48), dp(34)) if app.thread_can_delete else (0, 0)
+                                pos_hint: {"center_y": .5}
+                                opacity: 1 if app.thread_can_delete else 0
+                                disabled: not app.thread_can_delete
+                                on_release: app.confirm_delete_thread()
+                                MDIcon:
+                                    icon: "delete-outline"
+                                    size_hint: None, None
+                                    size: dp(22), dp(22)
+                                    pos_hint: {"center_y": .5}
+                                    theme_text_color: "Custom"
+                                    text_color: MUTED
+                    MDBoxLayout:
+                        size_hint_y: None
+                        height: dp(34)
+                        padding: dp(14), dp(8), dp(14), 0
+                        SectionLabel:
+                            text: "REPLIES"
+                    MDBoxLayout:
+                        id: reply_list
+                        orientation: "vertical"
+                        adaptive_height: True
+                        spacing: dp(1)
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(68)
+                md_bg_color: WHITE
+                padding: dp(12), dp(10)
+                spacing: dp(10)
+                MDCard:
+                    radius: [dp(24)]
+                    elevation: 0
+                    md_bg_color: (0.94, 0.945, 0.955, 1)
+                    padding: dp(18), 0
+                    TextInput:
+                        id: reply_input
+                        hint_text: "Write a reply..."
+                        multiline: False
+                        text_validate_unfocus: False
+                        background_color: 0, 0, 0, 0
+                        background_normal: ""
+                        background_active: ""
+                        foreground_color: INK
+                        hint_text_color: MUTED
+                        cursor_color: PRIMARY
+                        font_size: "16sp"
+                        padding: [0, dp(14), 0, dp(14)]
+                        on_text_validate: app.send_reply()
+                MDCard:
+                    size_hint: None, None
+                    size: dp(48), dp(48)
+                    radius: [dp(24)]
+                    elevation: 0
+                    md_bg_color: PRIMARY
+                    MDIconButton:
+                        icon: "send"
+                        pos_hint: {"center_x": .5, "center_y": .5}
+                        theme_icon_color: "Custom"
+                        icon_color: WHITE
+                        on_release: app.send_reply()
+
+    MDScreen:
         name: "compose"
         md_bg_color: WHITE
         MDBoxLayout:
@@ -1554,7 +1921,7 @@ MDScreenManager:
                     icon_color: INK
                     on_release: app.close_compose()
                 MDLabel:
-                    text: "Create post"
+                    text: "New thread"
                     halign: "center"
                     font_style: "H6"
                     bold: True
@@ -1564,16 +1931,16 @@ MDScreenManager:
                     size_hint: None, None
                     size: dp(76), dp(40)
                     pos_hint: {"center_y": .5}
-                    on_release: app.share_post()
+                    on_release: app.submit_thread()
                     PassCard:
                         radius: [dp(20)]
                         elevation: 0
-                        md_bg_color: PRIMARY if app.post_ready else (0.9, 0.91, 0.93, 1)
+                        md_bg_color: PRIMARY if app.thread_ready else (0.9, 0.91, 0.93, 1)
                         Label:
                             text: "Post"
                             font_size: "15sp"
                             bold: True
-                            color: WHITE if app.post_ready else (0.6, 0.62, 0.66, 1)
+                            color: WHITE if app.thread_ready else (0.6, 0.62, 0.66, 1)
                             text_size: self.size
                             halign: "center"
                             valign: "middle"
@@ -1588,262 +1955,178 @@ MDScreenManager:
                     orientation: "vertical"
                     adaptive_height: True
                     padding: dp(14)
-                    spacing: dp(12)
-                    MDBoxLayout:
+                    spacing: dp(10)
+                    SectionLabel:
+                        text: "COMMUNITY"
+                    ScrollView:
                         size_hint_y: None
-                        height: dp(48)
-                        spacing: dp(10)
-                        AvatarDot:
-                            size: dp(42), dp(42)
-                            pos_hint: {"center_y": .5}
-                            initial: app.me_initial
-                            color: app.me_color
-                        MDLabel:
-                            text: app.me_name
-                            font_style: "Subtitle1"
-                            bold: True
-                            theme_text_color: "Custom"
-                            text_color: INK
+                        height: dp(34)
+                        bar_width: 0
+                        do_scroll_y: False
+                        MDBoxLayout:
+                            id: comp_comms
+                            orientation: "horizontal"
+                            adaptive_width: True
                             size_hint_y: None
-                            text_size: self.width, None
-                            height: self.texture_size[1]
-                            pos_hint: {"center_y": .5}
+                            height: dp(34)
+                            spacing: dp(8)
+                    SectionLabel:
+                        text: "TITLE"
+                    MDCard:
+                        size_hint_y: None
+                        height: dp(46)
+                        radius: [dp(23)]
+                        elevation: 0
+                        md_bg_color: (0.94, 0.945, 0.955, 1)
+                        padding: dp(16), dp(4)
+                        TextInput:
+                            id: thread_title_input
+                            hint_text: "A clear, short title"
+                            multiline: False
+                            background_color: 0, 0, 0, 0
+                            background_normal: ""
+                            background_active: ""
+                            foreground_color: INK
+                            hint_text_color: MUTED
+                            cursor_color: PRIMARY
+                            font_size: "16sp"
+                            padding: [0, dp(12), 0, dp(12)]
+                            on_text: app.typed_title(self)
+                    SectionLabel:
+                        text: "DETAILS"
+                    MDCard:
+                        size_hint_y: None
+                        height: dp(220)
+                        radius: [dp(18)]
+                        elevation: 0
+                        md_bg_color: (0.94, 0.945, 0.955, 1)
+                        padding: dp(16), dp(4)
+                        TextInput:
+                            id: thread_body_input
+                            hint_text: "What do you want to talk about?"
+                            multiline: True
+                            background_color: 0, 0, 0, 0
+                            background_normal: ""
+                            background_active: ""
+                            foreground_color: INK
+                            hint_text_color: MUTED
+                            cursor_color: PRIMARY
+                            font_size: "16sp"
+                            padding: [0, dp(12), 0, dp(12)]
+                            on_text: app.typed_body(self)
                     MDLabel:
-                        text: ("Question of the day: " + app.post_prompt) if app.post_prompt else ""
-                        font_style: "Body2"
+                        text: app.thread_chars
+                        font_style: "Caption"
+                        halign: "right"
                         theme_text_color: "Custom"
-                        text_color: PRIMARY
+                        text_color: MUTED
                         size_hint_y: None
                         text_size: self.width, None
-                        height: self.texture_size[1] if self.text else 0
-                    TextInput:
-                        id: post_input
-                        hint_text: "What's on your mind?"
-                        multiline: True
+                        height: self.texture_size[1]
+
+    MDScreen:
+        name: "newcommunity"
+        md_bg_color: WHITE
+        MDBoxLayout:
+            orientation: "vertical"
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(64)
+                padding: dp(8), dp(10), dp(14), dp(10)
+                MDIconButton:
+                    icon: "close"
+                    pos_hint: {"center_y": .5}
+                    theme_icon_color: "Custom"
+                    icon_color: INK
+                    on_release: app.close_new_community()
+                MDLabel:
+                    text: "New community"
+                    halign: "center"
+                    font_style: "H6"
+                    bold: True
+                    theme_text_color: "Custom"
+                    text_color: INK
+                TapBox:
+                    size_hint: None, None
+                    size: dp(84), dp(40)
+                    pos_hint: {"center_y": .5}
+                    on_release: app.submit_community()
+                    PassCard:
+                        radius: [dp(20)]
+                        elevation: 0
+                        md_bg_color: PRIMARY if app.nc_ready else (0.9, 0.91, 0.93, 1)
+                        Label:
+                            text: "Create"
+                            font_size: "15sp"
+                            bold: True
+                            color: WHITE if app.nc_ready else (0.6, 0.62, 0.66, 1)
+                            text_size: self.size
+                            halign: "center"
+                            valign: "middle"
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(1)
+                md_bg_color: LINE
+            ScrollView:
+                bar_width: 0
+                do_scroll_x: False
+                MDBoxLayout:
+                    orientation: "vertical"
+                    adaptive_height: True
+                    padding: dp(14)
+                    spacing: dp(10)
+                    SectionLabel:
+                        text: "NAME"
+                    MDCard:
                         size_hint_y: None
-                        height: dp(170)
-                        background_color: 0, 0, 0, 0
-                        background_normal: ""
-                        background_active: ""
-                        foreground_color: INK
-                        hint_text_color: MUTED
-                        cursor_color: PRIMARY
-                        font_size: "18sp"
-                        padding: [0, dp(6), 0, dp(6)]
-                        on_text: app.on_post_text(self)
+                        height: dp(46)
+                        radius: [dp(23)]
+                        elevation: 0
+                        md_bg_color: (0.94, 0.945, 0.955, 1)
+                        padding: dp(16), dp(4)
+                        TextInput:
+                            id: nc_name
+                            hint_text: "For example: Photography"
+                            multiline: False
+                            background_color: 0, 0, 0, 0
+                            background_normal: ""
+                            background_active: ""
+                            foreground_color: INK
+                            hint_text_color: MUTED
+                            cursor_color: PRIMARY
+                            font_size: "16sp"
+                            padding: [0, dp(12), 0, dp(12)]
+                            on_text: app.typed_community(self, 30)
+                    SectionLabel:
+                        text: "DESCRIPTION (OPTIONAL)"
+                    MDCard:
+                        size_hint_y: None
+                        height: dp(130)
+                        radius: [dp(18)]
+                        elevation: 0
+                        md_bg_color: (0.94, 0.945, 0.955, 1)
+                        padding: dp(16), dp(4)
+                        TextInput:
+                            id: nc_desc
+                            hint_text: "What is this community about?"
+                            multiline: True
+                            background_color: 0, 0, 0, 0
+                            background_normal: ""
+                            background_active: ""
+                            foreground_color: INK
+                            hint_text_color: MUTED
+                            cursor_color: PRIMARY
+                            font_size: "16sp"
+                            padding: [0, dp(12), 0, dp(12)]
+                            on_text: app.typed_community(self, 200)
                     MDLabel:
-                        text: app.post_chars
-                        halign: "right"
+                        text: "Anyone can join and read. You will be the moderator and can remove threads and replies in your community."
                         font_style: "Caption"
                         theme_text_color: "Custom"
                         text_color: MUTED
                         size_hint_y: None
                         text_size: self.width, None
                         height: self.texture_size[1]
-                    SectionLabel:
-                        text: "POLL"
-                    MDBoxLayout:
-                        size_hint_y: None
-                        height: dp(34)
-                        Chip:
-                            text: "Ask your friends"
-                            selected: app.post_poll_on
-                            on_release: app.toggle_poll()
-                    MDBoxLayout:
-                        orientation: "vertical"
-                        size_hint_y: None
-                        height: dp(194) if app.post_poll_on else 0
-                        opacity: 1 if app.post_poll_on else 0
-                        disabled: not app.post_poll_on
-                        spacing: dp(6)
-                        MDCard:
-                            size_hint_y: None
-                            height: dp(44)
-                            radius: [dp(22)]
-                            elevation: 0
-                            md_bg_color: (0.94, 0.945, 0.955, 1)
-                            padding: dp(16), 0
-                            TextInput:
-                                id: poll_opt0
-                                hint_text: "Option 1"
-                                multiline: False
-                                background_color: 0, 0, 0, 0
-                                background_normal: ""
-                                background_active: ""
-                                foreground_color: INK
-                                hint_text_color: MUTED
-                                cursor_color: PRIMARY
-                                font_size: "16sp"
-                                padding: [0, dp(12), 0, dp(12)]
-                                on_text: app.on_poll_text(self)
-                        MDCard:
-                            size_hint_y: None
-                            height: dp(44)
-                            radius: [dp(22)]
-                            elevation: 0
-                            md_bg_color: (0.94, 0.945, 0.955, 1)
-                            padding: dp(16), 0
-                            TextInput:
-                                id: poll_opt1
-                                hint_text: "Option 2"
-                                multiline: False
-                                background_color: 0, 0, 0, 0
-                                background_normal: ""
-                                background_active: ""
-                                foreground_color: INK
-                                hint_text_color: MUTED
-                                cursor_color: PRIMARY
-                                font_size: "16sp"
-                                padding: [0, dp(12), 0, dp(12)]
-                                on_text: app.on_poll_text(self)
-                        MDCard:
-                            size_hint_y: None
-                            height: dp(44)
-                            radius: [dp(22)]
-                            elevation: 0
-                            md_bg_color: (0.94, 0.945, 0.955, 1)
-                            padding: dp(16), 0
-                            TextInput:
-                                id: poll_opt2
-                                hint_text: "Option 3 (optional)"
-                                multiline: False
-                                background_color: 0, 0, 0, 0
-                                background_normal: ""
-                                background_active: ""
-                                foreground_color: INK
-                                hint_text_color: MUTED
-                                cursor_color: PRIMARY
-                                font_size: "16sp"
-                                padding: [0, dp(12), 0, dp(12)]
-                                on_text: app.on_poll_text(self)
-                        MDCard:
-                            size_hint_y: None
-                            height: dp(44)
-                            radius: [dp(22)]
-                            elevation: 0
-                            md_bg_color: (0.94, 0.945, 0.955, 1)
-                            padding: dp(16), 0
-                            TextInput:
-                                id: poll_opt3
-                                hint_text: "Option 4 (optional)"
-                                multiline: False
-                                background_color: 0, 0, 0, 0
-                                background_normal: ""
-                                background_active: ""
-                                foreground_color: INK
-                                hint_text_color: MUTED
-                                cursor_color: PRIMARY
-                                font_size: "16sp"
-                                padding: [0, dp(12), 0, dp(12)]
-                                on_text: app.on_poll_text(self)
-
-    MDScreen:
-        name: "note"
-        md_bg_color: (0, 0, 0, 1)
-        MDBoxLayout:
-            orientation: "vertical"
-            MDBoxLayout:
-                size_hint_y: None
-                height: dp(68)
-                padding: dp(8), dp(10), dp(14), dp(10)
-                MDIconButton:
-                    icon: "close"
-                    pos_hint: {"center_y": .5}
-                    theme_icon_color: "Custom"
-                    icon_color: WHITE
-                    on_release: app.close_note()
-                MDLabel:
-                    text: "New note"
-                    halign: "center"
-                    font_style: "H6"
-                    bold: True
-                    theme_text_color: "Custom"
-                    text_color: WHITE
-                TapBox:
-                    size_hint: None, None
-                    size: dp(88), dp(42)
-                    pos_hint: {"center_y": .5}
-                    on_release: app.share_note()
-                    PassCard:
-                        radius: [dp(21)]
-                        elevation: 0
-                        md_bg_color: PRIMARY if app.note_ready else (0.17, 0.17, 0.19, 1)
-                        MDLabel:
-                            text: "Share"
-                            text_size: self.size
-                            halign: "center"
-                            valign: "middle"
-                            bold: True
-                            font_style: "Subtitle1"
-                            theme_text_color: "Custom"
-                            text_color: WHITE if app.note_ready else (0.55, 0.56, 0.6, 1)
-            Widget:
-                size_hint_y: .5
-            MDFloatLayout:
-                size_hint: None, None
-                size: dp(290), dp(200)
-                pos_hint: {"center_x": .5}
-                AvatarDot:
-                    size: dp(104), dp(104)
-                    pos_hint: {"center_x": .5, "y": 0}
-                    initial: app.me_initial
-                    color: app.me_color
-                PassCard:
-                    size_hint: None, None
-                    size: dp(16), dp(16)
-                    pos_hint: {"x": .31, "y": .585}
-                    radius: [dp(8)]
-                    elevation: 0
-                    md_bg_color: (0.14, 0.14, 0.15, 1)
-                PassCard:
-                    size_hint: None, None
-                    size: dp(8), dp(8)
-                    pos_hint: {"x": .345, "y": .54}
-                    radius: [dp(4)]
-                    elevation: 0
-                    md_bg_color: (0.14, 0.14, 0.15, 1)
-                MDCard:
-                    size_hint: None, None
-                    size: dp(270), dp(46)
-                    pos_hint: {"center_x": .5, "y": .70}
-                    radius: [dp(23)]
-                    elevation: 0
-                    md_bg_color: (0.14, 0.14, 0.15, 1)
-                    padding: dp(18), 0
-                    TextInput:
-                        id: note_input
-                        hint_text: "Share a thought..."
-                        multiline: False
-                        text_validate_unfocus: False
-                        background_color: 0, 0, 0, 0
-                        background_normal: ""
-                        background_active: ""
-                        foreground_color: WHITE
-                        hint_text_color: (0.6, 0.62, 0.66, 1)
-                        cursor_color: PRIMARY
-                        font_size: "17sp"
-                        padding: [0, dp(13), 0, dp(13)]
-                        on_text: app.on_note_text(self)
-                        on_text_validate: app.share_note()
-            MDFlatButton:
-                text: "Delete note"
-                pos_hint: {"center_x": .5}
-                opacity: 1 if app.has_note else 0
-                disabled: not app.has_note
-                theme_text_color: "Custom"
-                text_color: (1, 0.35, 0.4, 1)
-                on_release: app.delete_note()
-            Widget:
-                size_hint_y: .9
-            MDLabel:
-                text: "Friends can see your note on Chatly for 24 hours."
-                halign: "center"
-                font_style: "Body2"
-                theme_text_color: "Custom"
-                text_color: (0.82, 0.83, 0.86, 1)
-                size_hint_y: None
-                text_size: self.width - dp(32), None
-                height: dp(64)
 
     MDScreen:
         name: "chat"
@@ -2011,39 +2294,7 @@ def short(text, n):
     return text if len(text) <= n else text[:n - 1].rstrip() + "..."
 
 
-def badge_text(sec):
-    """'10m' / '3h' pill for friends who were recently active (empty when online or unknown)."""
-    if sec is None or sec < 70:
-        return ""
-    m = int(sec // 60)
-    if m < 60:
-        return f"{m}m"
-    h = m // 60
-    return f"{h}h" if h < 24 else ""
 
-
-PROMPTS = [
-    "What made you smile today?", "What is one small win you had this week?",
-    "What song is stuck in your head right now?", "Describe your day in three words.",
-    "What is the best thing you ate recently?", "Who made your day better lately?",
-    "What are you looking forward to this weekend?", "What is something new you learned recently?",
-    "What would you do with a free day tomorrow?", "What is your go-to comfort food?",
-    "What is a place you want to visit someday?", "What habit are you trying to build?",
-    "What is the best advice you ever got?", "What is on your playlist this week?",
-    "What is a hobby you would love to pick up?", "What is one thing you are grateful for today?",
-    "Which movie could you watch again and again?", "What is your favorite way to relax?",
-    "What is a skill you wish you had?", "What was the highlight of your morning?",
-    "If today had a theme song, what would it be?", "What is a tiny thing that always cheers you up?",
-    "What is your favorite memory from this year?", "What would your perfect rainy day look like?",
-    "What is something you are proud of?", "Which app can you not live without?",
-    "What is the kindest thing someone did for you lately?", "What is your dream job for one day?",
-    "What do you do when you cannot sleep?", "What is a goal you are working on right now?",
-    "What is a food you could eat every day?",
-]
-
-
-def today_prompt():
-    return PROMPTS[date.today().toordinal() % len(PROMPTS)]
 
 
 def age_text(sec):
@@ -2058,18 +2309,7 @@ def age_text(sec):
     return f"{h}h" if h < 24 else f"{h // 24}d"
 
 
-def is_friend(u):
-    return (u.get("status") or "friends") == "friends"  # old databases (no friends update) count as friends
 
-
-def buttons_for(status):
-    """(primary, secondary) button labels for a relationship."""
-    return {"none": ("Add friend", ""), "outgoing": ("", "Cancel request"),
-            "incoming": ("Confirm", "Delete"), "friends": ("Message", "Unfriend")}.get(status, ("", ""))
-
-
-def mutual_text(n):
-    return "" if not n else ("1 mutual friend" if n == 1 else f"{n} mutual friends")
 
 
 class Supa:
@@ -2141,17 +2381,6 @@ class Supa:
         self.access = self.refresh = self.uid = None
 
     # ----- data -----
-    def users(self):
-        """People with display names + presence. Falls back if supabase/update_v2.sql was not run yet."""
-        try:
-            rows = self._req("POST", "/rest/v1/rpc/get_people", json={})
-            return [{"id": r["id"], "username": r["username"], "display_name": r.get("display_name"),
-                     "seconds_ago": r.get("seconds_ago"), "note": r.get("note"),
-                     "status": r.get("status") or "friends", "mutual": int(r.get("mutual") or 0)} for r in rows]
-        except RuntimeError:
-            rows = self._req("GET", "/rest/v1/profiles", params={"select": "id,username", "order": "username"})
-            return [{"id": r["id"], "username": r["username"], "display_name": None, "seconds_ago": None,
-                     "note": None, "status": "friends", "mutual": 0} for r in rows if r["id"] != self.uid]
 
     def me(self):
         try:
@@ -2177,6 +2406,72 @@ class Supa:
         self._req("PATCH", "/rest/v1/profiles", params={"id": f"eq.{self.uid}"},
                   json={"show_active": bool(flag)}, headers={"Prefer": "return=minimal"})
 
+    def users(self):
+        """Everyone on the forum (for messaging), with 'active' status."""
+        try:
+            rows = self._req("POST", "/rest/v1/rpc/get_people", json={})
+            return [{"id": r["id"], "username": r["username"], "display_name": r.get("display_name"),
+                     "seconds_ago": r.get("seconds_ago")} for r in rows or []]
+        except RuntimeError:
+            rows = self._req("GET", "/rest/v1/profiles", params={"select": "id,username", "order": "username"})
+            return [{"id": r["id"], "username": r["username"], "display_name": None, "seconds_ago": None}
+                    for r in rows if r["id"] != self.uid]
+
+    def conversations(self):
+        """{partner id: latest message} for everyone you have talked to."""
+        try:
+            rows = self._req("POST", "/rest/v1/rpc/get_conversations", json={}) or []
+        except RuntimeError:
+            return {}
+        return {r["partner"]: {"id": r["last_id"], "sender": r["sender"], "text": r["last_text"]} for r in rows}
+
+    def communities(self):
+        return self._req("POST", "/rest/v1/rpc/get_communities", json={}) or []
+
+    def create_community(self, name, description):
+        return self._req("POST", "/rest/v1/rpc/create_community", json={"p_name": name, "p_description": description or None})
+
+    def join_community(self, cid):
+        self._req("POST", "/rest/v1/rpc/join_community", json={"p_id": int(cid)})
+
+    def leave_community(self, cid):
+        self._req("POST", "/rest/v1/rpc/leave_community", json={"p_id": int(cid)})
+
+    def threads(self, community=None, author=None, sort="new", joined_only=False):
+        payload = {"p_sort": sort, "p_joined_only": bool(joined_only), "p_limit": 30}
+        if community:
+            payload["p_community"] = int(community)
+        if author:
+            payload["p_author"] = author
+        return self._req("POST", "/rest/v1/rpc/get_threads", json=payload) or []
+
+    def thread(self, tid):
+        rows = self._req("POST", "/rest/v1/rpc/get_thread", json={"p_thread": int(tid)})
+        return rows[0] if rows else None
+
+    def replies(self, tid):
+        return self._req("POST", "/rest/v1/rpc/get_replies", json={"p_thread": int(tid)}) or []
+
+    def create_thread(self, cid, title, body):
+        return self._req("POST", "/rest/v1/rpc/create_thread", json={"p_community": int(cid), "p_title": title, "p_body": body})
+
+    def create_reply(self, tid, body):
+        return self._req("POST", "/rest/v1/rpc/create_reply", json={"p_thread": int(tid), "p_body": body})
+
+    def delete_thread(self, tid):
+        self._req("POST", "/rest/v1/rpc/delete_thread", json={"p_thread": int(tid)})
+
+    def delete_reply(self, rid):
+        self._req("POST", "/rest/v1/rpc/delete_reply", json={"p_reply": int(rid)})
+
+    def toggle_thread_vote(self, tid):
+        rows = self._req("POST", "/rest/v1/rpc/toggle_thread_vote", json={"p_thread": int(tid)})
+        return rows[0] if rows else {}
+
+    def toggle_reply_vote(self, rid):
+        rows = self._req("POST", "/rest/v1/rpc/toggle_reply_vote", json={"p_reply": int(rid)})
+        return rows[0] if rows else {}
+
     def change_password(self, new_password):
         self._req("PUT", "/auth/v1/user", json={"password": new_password})
 
@@ -2190,49 +2485,15 @@ class Supa:
         except RuntimeError:
             return {}  # friends update not installed yet
 
-    def send_request(self, uid):
-        return self._req("POST", "/rest/v1/rpc/send_friend_request", json={"p_user": uid})
-
-    def respond_request(self, uid, accept):
-        return self._req("POST", "/rest/v1/rpc/respond_friend_request", json={"p_user": uid, "p_accept": bool(accept)})
-
-    def remove_friend(self, uid):
-        return self._req("POST", "/rest/v1/rpc/remove_friend", json={"p_user": uid})
-
     def set_bio(self, text):
         self._req("POST", "/rest/v1/rpc/set_bio", json={"p_bio": text})
-
-    def feed(self, author=None):
-        payload = {"p_limit": 30}
-        if author:
-            payload["p_author"] = author
-        return self._req("POST", "/rest/v1/rpc/get_feed", json=payload) or []
-
-    def create_post(self, body, prompt, poll=None):
-        payload = {"p_body": body, "p_prompt": prompt or None}
-        if poll:
-            payload["p_poll"] = poll
-        self._req("POST", "/rest/v1/rpc/create_post", json=payload)
-
-    def vote_poll(self, post_id, option):
-        return self._req("POST", "/rest/v1/rpc/vote_poll", json={"p_post": post_id, "p_option": int(option)}) or {}
 
     def streaks(self):
         try:
             rows = self._req("POST", "/rest/v1/rpc/get_streaks", json={})
             return {r["friend"]: int(r["days"]) for r in rows or []}
         except RuntimeError:
-            return {}  # polls/streaks update not installed yet
-
-    def toggle_like(self, post_id):
-        rows = self._req("POST", "/rest/v1/rpc/toggle_like", json={"p_post": post_id})
-        return rows[0] if rows else {}
-
-    def delete_post(self, post_id):
-        self._req("DELETE", "/rest/v1/posts", params={"id": f"eq.{post_id}"})
-
-    def set_note(self, text):
-        self._req("POST", "/rest/v1/rpc/set_note", json={"p_note": text})
+            return {}  # the streaks update (update_v7.sql) has not been run
 
     def touch(self):
         self._req("POST", "/rest/v1/rpc/touch_presence", json={})
@@ -2421,7 +2682,7 @@ class SwitchRow(MDBoxLayout):
 
 
 class PersonRow(ButtonBehavior, MDBoxLayout):
-    """A person in the Friends tab, with action buttons that depend on the friendship state."""
+    """A member in a list (for example New message), with up to two action buttons."""
     uid = StringProperty("")
     name = StringProperty("")
     initial = StringProperty("?")
@@ -2469,38 +2730,12 @@ class TabItem(ButtonBehavior, MDFloatLayout):
 
 
 class Chip(ButtonBehavior, MDBoxLayout):
-    """Pill-shaped choice (for example: add a poll)."""
+    """Pill-shaped choice (sorting, picking a community)."""
     text = StringProperty("")
     selected = BooleanProperty(False)
     accent = ListProperty([0.094, 0.467, 0.949, 1])
 
 
-class PollOption(ButtonBehavior, MDFloatLayout):
-    """One answer in a poll: a bar that fills according to its share of the votes."""
-    text = StringProperty("")
-    idx = NumericProperty(0)
-    fill = NumericProperty(0)
-    pct_text = StringProperty("")
-    mine = BooleanProperty(False)
-    card = ObjectProperty(None)
-
-
-class PostCard(MDBoxLayout):
-    pid = NumericProperty(0)
-    author_id = StringProperty("")
-    name = StringProperty("")
-    initial = StringProperty("?")
-    color = ListProperty([0, 0.52, 1, 1])
-    meta = StringProperty("")
-    prompt = StringProperty("")
-    body = StringProperty("")
-    my_vote = NumericProperty(-1)
-    counts = ListProperty([])
-    poll_rows = ListProperty([])
-    votes_text = StringProperty("")
-    likes = NumericProperty(0)
-    liked = BooleanProperty(False)
-    mine = BooleanProperty(False)
 
 
 class MenuRow(ButtonBehavior, MDBoxLayout):
@@ -2510,20 +2745,49 @@ class MenuRow(ButtonBehavior, MDBoxLayout):
     subtitle = StringProperty("")
 
 
-class TapBox(ButtonBehavior, MDBoxLayout):
-    """A plain tappable container."""
-
-
-class StoryItem(ButtonBehavior, MDBoxLayout):
-    """One avatar in the top 'active friends' rail."""
+class ThreadCard(ButtonBehavior, MDBoxLayout):
+    """A thread in a list: community, title, snippet, votes, replies."""
+    tid = NumericProperty(0)
+    community_id = NumericProperty(0)
+    community = StringProperty("")
+    author_id = StringProperty("")
     name = StringProperty("")
     initial = StringProperty("?")
     color = ListProperty([0, 0.52, 1, 1])
-    note = StringProperty("")
-    placeholder = BooleanProperty(False)
-    online = BooleanProperty(False)
-    badge = StringProperty("")
-    plus = BooleanProperty(False)
+    meta = StringProperty("")
+    title = StringProperty("")
+    snippet = StringProperty("")
+    votes = NumericProperty(0)
+    replies = NumericProperty(0)
+    voted = BooleanProperty(False)
+
+
+class ReplyCard(MDBoxLayout):
+    rid = NumericProperty(0)
+    author_id = StringProperty("")
+    name = StringProperty("")
+    initial = StringProperty("?")
+    color = ListProperty([0, 0.52, 1, 1])
+    meta = StringProperty("")
+    body = StringProperty("")
+    votes = NumericProperty(0)
+    voted = BooleanProperty(False)
+    can_delete = BooleanProperty(False)
+
+
+class CommunityRow(ButtonBehavior, MDBoxLayout):
+    cid = NumericProperty(0)
+    name = StringProperty("")
+    initial = StringProperty("?")
+    color = ListProperty([0, 0.52, 1, 1])
+    subtitle = StringProperty("")
+    joined = BooleanProperty(False)
+    action = StringProperty("Join")
+
+
+class TapBox(ButtonBehavior, MDBoxLayout):
+    """A plain tappable container."""
+
 
 
 class ContactRow(ButtonBehavior, MDBoxLayout):
@@ -2549,10 +2813,7 @@ class ChatApp(MDApp):
     me_email = StringProperty("")
     me_initial = StringProperty("?")
     me_color = ListProperty([0, 0.52, 1, 1])
-    note_ready = BooleanProperty(False)
-    has_note = BooleanProperty(False)
     unread_total = NumericProperty(0)
-    request_count = NumericProperty(0)
     me_bio = StringProperty("")
     me_stats = StringProperty("")
     view_uid = StringProperty("")
@@ -2563,14 +2824,35 @@ class ChatApp(MDApp):
     view_bio = StringProperty("")
     view_hint = StringProperty("")
     view_stats = StringProperty("")
-    view_status = StringProperty("none")
     view_primary = StringProperty("")
     view_secondary = StringProperty("")
-    post_poll_on = BooleanProperty(False)
-    post_prompt = StringProperty("")
-    post_ready = BooleanProperty(False)
-    post_chars = StringProperty("0/500")
-    prompt_text = StringProperty("")
+    feed_sort = StringProperty("new")
+    comm_id = NumericProperty(0)
+    comm_name = StringProperty("")
+    comm_initial = StringProperty("?")
+    comm_color = ListProperty([0, 0.52, 1, 1])
+    comm_desc = StringProperty("")
+    comm_members = StringProperty("")
+    comm_joined = BooleanProperty(False)
+    comm_action = StringProperty("Join")
+    thread_id = NumericProperty(0)
+    thread_comm_id = NumericProperty(0)
+    thread_community = StringProperty("")
+    thread_title = StringProperty("")
+    thread_body = StringProperty("")
+    thread_meta = StringProperty("")
+    thread_author_id = StringProperty("")
+    thread_name = StringProperty("")
+    thread_initial = StringProperty("?")
+    thread_color = ListProperty([0, 0.52, 1, 1])
+    thread_votes = NumericProperty(0)
+    thread_voted = BooleanProperty(False)
+    thread_replies = NumericProperty(0)
+    thread_can_delete = BooleanProperty(False)
+    compose_comm = NumericProperty(0)
+    thread_ready = BooleanProperty(False)
+    thread_chars = StringProperty("0/2000")
+    nc_ready = BooleanProperty(False)
 
     def build(self):
         self.title = "Chatly"
@@ -2588,14 +2870,16 @@ class ChatApp(MDApp):
         self.tick = 0
         self.me = {}
         self._profile_loading = False
-        self.prefs = {"previews": True, "rail": True}
+        self.prefs = {"previews": True}
         if self.store.exists("prefs"):
             self.prefs.update(self.store.get("prefs"))
-        self.feed_req, self.feed_loaded, self.chat_from, self.user_from = 0, False, "feed", "people"
+        self.feed_req, self.feed_loaded, self.chat_from, self.user_from = 0, False, "feed", "feed"
+        self.comm_req, self.comm_from, self.thread_from = 0, "communities", "feed"
+        self.compose_from, self.people_from = "feed", "contacts"
+        self.communities, self.joined, self.forum_ready = [], set(), False
+        self.convos, self.comp_chips, self.force_users = {}, [], False
         self.streaks = {}
-        self.prompt_text = today_prompt()
         self.feed_sig = None
-        self.rail_sig = None
         self.ui_ok = True
         Window.softinput_mode = "below_target"
         Window.bind(on_keyboard=self._on_key)
@@ -2652,6 +2936,7 @@ class ChatApp(MDApp):
         # transition for its own slide animation, so "no transition" never took effect with it.
         sm = ScreenManager(transition=NoTransition())
         self.load_problems = []
+        login_error = None
         # A page that was loading or on screen when the app last died is switched off this time.
         for flag in ("loading.flag", "showing.flag"):
             name = self.read_flag(flag)
@@ -2682,10 +2967,15 @@ class ChatApp(MDApp):
                     tb = traceback.format_exc()
                     self.log_crash(tb)
                     self.load_problems.append(name)
+                    if name == "login":
+                        login_error = tb  # nobody could sign in: show the full error screen instead
                     scr = self.placeholder_screen(name, text, "This page could not load:\n" + tb.strip().splitlines()[-1])
                 self.clear_flag("loading.flag")
             sm.add_widget(scr)
             sm.ids.update(scr.ids)  # the app looks widgets up by id through the manager
+        if login_error:
+            self.ui_ok = False
+            return make_error_widget(login_error)
         sm.bind(current=self._screen_shown)
         self._screen_shown(sm, "login")
         return sm
@@ -2720,6 +3010,805 @@ class ChatApp(MDApp):
         if self.load_problems:
             self.notify("Some pages could not load: " + ", ".join(self.load_problems[:6]) +
                         ".\n\nThe rest of the app works. Details: Menu > Settings > About > View error log.")
+
+    # ---------- tabs ----------
+    def go_tab(self, name):
+        self.root.current = name
+        if name == "feed":
+            self.refresh_feed()
+        elif name == "communities":
+            self.load_communities()
+        elif name == "contacts":
+            self.refresh_contacts()
+            self.refresh_convos()
+            self.refresh_streaks()
+        elif name == "me":
+            self.refresh_me()
+
+    def open_search(self):
+        self.go_tab("communities")
+        Clock.schedule_once(lambda dt: setattr(self.root.ids.comm_search, "focus", True), 0.2)
+
+    def _on_key(self, window, key, *args):
+        """Android back button: back one screen; from a tab go Home; from Home leave the app."""
+        if key == 27 and self.root:
+            cur = self.root.current
+            back = {"chat": self.back, "user": self.close_user, "thread": self.close_thread,
+                    "community": self.close_community, "compose": self.close_compose,
+                    "newcommunity": self.close_new_community, "people": self.close_people,
+                    "profile": self.back_to_settings, "password": self.back_to_settings}
+            if cur in back:
+                back[cur]()
+                return True
+            if cur in ("communities", "contacts", "me", "settings"):
+                self.go_tab("feed")
+                return True
+        return False
+
+    def section_header(self, text):
+        box = MDBoxLayout(size_hint_y=None, height=dp(34), padding=(dp(14), dp(8), dp(14), 0))
+        box.add_widget(SectionLabel(text=text))
+        return box
+
+    def confirm(self, title, text, action, label="DELETE"):
+        def close(*args):
+            dlg.dismiss()
+
+        def go(*args):
+            dlg.dismiss()
+            action()
+
+        dlg = MDDialog(title=title, text=text,
+                       buttons=[MDFlatButton(text="CANCEL", on_release=close),
+                                MDFlatButton(text=label, theme_text_color="Custom",
+                                             text_color=(0.86, 0.2, 0.25, 1), on_release=go)])
+        dlg.open()
+
+    def forum_error(self, e, box_id):
+        """Show a message in a list instead of the content."""
+        msg = str(e)
+        if any(k in msg for k in ("get_communities", "get_threads", "schema cache")):
+            text = "The forum is not set up in your Supabase project yet. Run update_v8.sql in the SQL Editor."
+        else:
+            text = "Could not load. Check your connection."
+        box = self.root.ids[box_id]
+        box.clear_widgets()
+        box.add_widget(MDLabel(text=text, halign="center", theme_text_color="Hint",
+                               size_hint_y=None, height=dp(120)))
+
+    def forum_fail(self, e):
+        self.loading = False
+        msg = str(e)
+        if "moderators cannot leave" in msg:
+            msg = "You moderate this community, so you can't leave it."
+        elif "communities_name_idx" in msg or "duplicate key" in msg:
+            msg = "A community with that name already exists."
+        elif "violates check constraint" in msg:
+            msg = "Please check the length of what you entered."
+        elif "not allowed" in msg:
+            msg = "You are not allowed to do that."
+        elif any(k in msg for k in ("create_", "join_community", "leave_community", "toggle_",
+                                    "delete_", "get_thread", "get_replies", "schema cache")):
+            msg = "The forum is not set up yet. Run update_v8.sql in the Supabase SQL Editor."
+        self.notify(msg[:200])
+
+    # ---------- communities ----------
+    def load_communities(self, then=None):
+        if not self.api.uid or not self.root:
+            return
+        self.comm_req += 1
+        req = self.comm_req
+
+        def done(rows):
+            if req != self.comm_req:
+                return
+            self.set_communities(rows)
+            if then:
+                then()
+
+        def fail(e):
+            if req == self.comm_req:
+                self.forum_error(e, "comm_list")
+
+        self.bg(self.api.communities, done, fail)
+
+    def set_communities(self, rows):
+        self.communities = rows or []
+        self.joined = {c["id"] for c in self.communities if c.get("joined")}
+        self.forum_ready = True
+        self.render_communities()
+
+    def render_communities(self):
+        if not self.root:
+            return
+        q = self.root.ids.comm_search.text.strip().lower()
+        lst = self.root.ids.comm_list
+        lst.clear_widgets()
+        rows = [c for c in self.communities
+                if not q or q in c["name"].lower() or q in (c.get("description") or "").lower()]
+        mine = [c for c in rows if c.get("joined")]
+        other = [c for c in rows if not c.get("joined")]
+        for title, items in (("YOUR COMMUNITIES", mine), ("DISCOVER" if mine else "ALL COMMUNITIES", other)):
+            if items:
+                lst.add_widget(self.section_header(title))
+                for c in items:
+                    lst.add_widget(self.comm_row(c))
+        if not rows:
+            lst.add_widget(MDLabel(
+                text="No matches" if q else "No communities yet. Tap Create to start one!",
+                halign="center", theme_text_color="Hint", size_hint_y=None, height=dp(120)))
+
+    def comm_row(self, c):
+        n = int(c.get("members") or 0)
+        sub = f"{n} member" + ("" if n == 1 else "s")
+        if c.get("description"):
+            sub += " · " + short(c["description"], 44)
+        joined = bool(c.get("joined"))
+        return CommunityRow(
+            cid=c["id"], name=c["name"], initial=initial(c["name"]), color=avatar_color(c["name"]),
+            subtitle=sub, joined=joined, action="Joined" if joined else "Join",
+            on_release=lambda x, cid=c["id"]: self.open_community(cid))
+
+    def toggle_member(self, row):
+        self.set_membership(int(row.cid), not row.joined)
+
+    def set_membership(self, cid, join):
+        c = next((x for x in self.communities if x["id"] == cid), None)
+        if c is None:
+            return
+        if not join and c.get("mine"):
+            self.notify("You moderate this community, so you can't leave it.")
+            return
+
+        def apply(joined):
+            c["members"] = max(0, int(c.get("members") or 0) + (1 if joined and not c.get("joined") else
+                                                                  -1 if not joined and c.get("joined") else 0))
+            c["joined"] = joined
+            self.joined = {x["id"] for x in self.communities if x.get("joined")}
+            self.render_communities()
+            if int(self.comm_id) == cid:
+                self.fill_comm(c)
+
+        apply(join)  # instant; undone below if the server says no
+
+        def fail(e):
+            apply(not join)
+            self.forum_fail(e)
+
+        def work():
+            return self.api.join_community(cid) if join else self.api.leave_community(cid)
+
+        self.bg(work, lambda _: setattr(self, "feed_sig", None), fail)
+
+    def open_community(self, cid):
+        c = next((x for x in self.communities if x["id"] == cid), None)
+        if c is None:
+            return
+        if self.root.current in ("feed", "communities", "thread", "user", "me"):
+            self.comm_from = self.root.current
+        self.fill_comm(c)
+        self.root.current = "community"
+        self.load_comm_threads()
+
+    def fill_comm(self, c):
+        self.comm_id = c["id"]
+        self.comm_name = c["name"]
+        self.comm_initial = initial(c["name"])
+        self.comm_color = avatar_color(c["name"])
+        self.comm_desc = c.get("description") or "No description yet."
+        n = int(c.get("members") or 0)
+        self.comm_members = f"{n} member" + ("" if n == 1 else "s")
+        self.comm_joined = bool(c.get("joined"))
+        self.comm_action = "Joined" if self.comm_joined else "Join"
+
+    def comm_toggle(self):
+        self.set_membership(int(self.comm_id), not self.comm_joined)
+
+    def load_comm_threads(self):
+        cid = int(self.comm_id)
+        box = self.root.ids.comm_threads
+        box.clear_widgets()
+
+        def done(rows):
+            if int(self.comm_id) == cid:
+                self.fill_threads(box, rows, "No threads yet. Start the first one!")
+
+        self.bg(lambda: self.api.threads(community=cid, sort="new"), done,
+                lambda e: self.forum_error(e, "comm_threads"))
+
+    def close_community(self):
+        self.root.current = self.comm_from
+
+    def open_new_community(self):
+        ids = self.root.ids
+        ids.nc_name.text = ""
+        ids.nc_desc.text = ""
+        self.nc_ready = False
+        self.root.current = "newcommunity"
+        Clock.schedule_once(lambda dt: setattr(ids.nc_name, "focus", True), 0.3)
+
+    def close_new_community(self):
+        self.root.ids.nc_name.focus = False
+        self.root.ids.nc_desc.focus = False
+        self.root.current = "communities"
+
+    def typed_community(self, widget, limit):
+        if len(widget.text) > limit:
+            widget.text = widget.text[:limit]
+            return
+        self.nc_ready = len(self.root.ids.nc_name.text.strip()) >= 3
+
+    def submit_community(self):
+        ids = self.root.ids
+        name, desc = ids.nc_name.text.strip(), ids.nc_desc.text.strip()
+        if not self.nc_ready:
+            return
+        self.loading = True
+
+        def done(new_id):
+            self.loading = False
+            self.close_new_community()
+            target = int(new_id) if isinstance(new_id, (int, float)) else None
+            self.load_communities(then=(lambda: self.open_community(target)) if target else None)
+
+        self.bg(lambda: self.api.create_community(name, desc), done, self.forum_fail)
+
+    # ---------- threads ----------
+    def thread_card(self, r):
+        name = (r.get("display_name") or r.get("username") or "?").strip()
+        tid = r["id"]
+        return ThreadCard(
+            tid=tid, community_id=int(r.get("community_id") or 0), community=r.get("community_name") or "",
+            author_id=r["author"], name=name, initial=initial(name),
+            color=avatar_color(r.get("username") or name), meta=age_text(r.get("age_seconds")),
+            title=r["title"], snippet=" ".join((r.get("snippet") or "").split()),
+            votes=int(r.get("votes") or 0), replies=int(r.get("replies") or 0), voted=bool(r.get("voted")),
+            on_release=lambda x, t=tid: self.open_thread(t))
+
+    def reply_card(self, r):
+        name = (r.get("display_name") or r.get("username") or "?").strip()
+        return ReplyCard(
+            rid=r["id"], author_id=r["author"], name=name, initial=initial(name),
+            color=avatar_color(r.get("username") or name), meta=age_text(r.get("age_seconds")),
+            body=r["body"], votes=int(r.get("votes") or 0), voted=bool(r.get("voted")),
+            can_delete=bool(r.get("can_delete")))
+
+    def fill_threads(self, box, rows, empty):
+        box.clear_widgets()
+        if not rows:
+            box.add_widget(MDLabel(text=empty, halign="center", theme_text_color="Hint",
+                                   size_hint_y=None, height=dp(100)))
+            return
+        for r in rows:
+            box.add_widget(self.thread_card(r))
+
+    def refresh_feed(self, silent=False):
+        if not self.api.uid or not self.root:
+            return
+        self.feed_req += 1
+        req, sort, joined_only = self.feed_req, self.feed_sort, bool(self.joined)
+
+        def done(rows):
+            if req != self.feed_req:
+                return  # an older answer
+            sig = (sort, joined_only, [(r["id"], r.get("votes"), r.get("replies"), r.get("title"), r.get("voted"))
+                                       for r in rows])
+            if sig == self.feed_sig and self.feed_loaded:
+                return  # nothing changed: keep the cards we already have
+            self.feed_sig = sig
+            self.feed_loaded = True
+            box = self.root.ids.feed_list
+            box.clear_widgets()
+            if not rows:
+                box.add_widget(MDLabel(text="No threads yet. Join a community or start the first thread!",
+                                       halign="center", theme_text_color="Hint", size_hint_y=None, height=dp(120)))
+                return
+            if not joined_only:
+                box.add_widget(self.section_header("POPULAR THREADS"))
+            for r in rows:
+                box.add_widget(self.thread_card(r))
+
+        def fail(e):
+            if req != self.feed_req or (silent and self.feed_loaded):
+                return
+            self.feed_sig = None
+            self.forum_error(e, "feed_list")
+
+        self.bg(lambda: self.api.threads(sort=sort, joined_only=joined_only), done, fail)
+
+    def set_sort(self, key):
+        self.feed_sort = key
+        self.feed_sig = None
+        self.refresh_feed()
+
+    def vote_thread_card(self, card):
+        self.flip_vote(card, lambda: self.api.toggle_thread_vote(int(card.tid)))
+
+    def vote_reply_card(self, card):
+        self.flip_vote(card, lambda: self.api.toggle_reply_vote(int(card.rid)))
+
+    def flip_vote(self, card, call):
+        """Upvote instantly; the server's count replaces ours, and a failure puts things back."""
+        card.voted = not card.voted
+        card.votes = max(0, card.votes + (1 if card.voted else -1))
+
+        def done(res):
+            if res and "votes" in res:
+                card.votes, card.voted = int(res["votes"]), bool(res.get("voted"))
+
+        def fail(e):
+            card.voted = not card.voted
+            card.votes = max(0, card.votes + (1 if card.voted else -1))
+            self.forum_fail(e)
+
+        self.bg(call, done, fail)
+
+    # ---------- one thread ----------
+    def open_thread(self, tid):
+        if self.root.current in ("feed", "community", "me", "user"):
+            self.thread_from = self.root.current
+        self.thread_id = int(tid)
+        self.thread_title = self.thread_body = self.thread_meta = self.thread_community = ""
+        self.thread_replies = self.thread_votes = 0
+        self.thread_voted = self.thread_can_delete = False
+        self.root.ids.reply_list.clear_widgets()
+        self.root.ids.reply_input.text = ""
+        self.root.current = "thread"
+        self.load_thread()
+
+    def load_thread(self):
+        tid = int(self.thread_id)
+
+        def work():
+            return self.api.thread(tid), self.api.replies(tid)
+
+        def done(res):
+            t, replies = res
+            if int(self.thread_id) != tid:
+                return
+            if not t:
+                self.notify("This thread no longer exists.")
+                self.close_thread()
+                return
+            name = (t.get("display_name") or t.get("username") or "?").strip()
+            self.thread_title, self.thread_body = t["title"], t["body"]
+            self.thread_community = t.get("community_name") or ""
+            self.thread_comm_id = int(t.get("community_id") or 0)
+            self.thread_author_id, self.thread_name = t["author"], name
+            self.thread_initial = initial(name)
+            self.thread_color = avatar_color(t.get("username") or name)
+            self.thread_meta = age_text(t.get("age_seconds"))
+            self.thread_votes, self.thread_voted = int(t.get("votes") or 0), bool(t.get("voted"))
+            self.thread_replies, self.thread_can_delete = int(t.get("replies") or 0), bool(t.get("can_delete"))
+            box = self.root.ids.reply_list
+            box.clear_widgets()
+            for r in replies:
+                box.add_widget(self.reply_card(r))
+
+        self.bg(work, done, self.forum_fail)
+
+    def close_thread(self):
+        self.root.current = self.thread_from
+        if self.thread_from == "feed":
+            self.refresh_feed(silent=True)
+        elif self.thread_from == "community":
+            self.load_comm_threads()
+        elif self.thread_from == "me":
+            self.refresh_me()
+
+    def open_thread_community(self):
+        if self.thread_comm_id:
+            self.open_community(int(self.thread_comm_id))
+
+    def vote_thread_page(self):
+        tid = int(self.thread_id)
+        self.thread_voted = not self.thread_voted
+        self.thread_votes = max(0, self.thread_votes + (1 if self.thread_voted else -1))
+
+        def done(res):
+            if res and "votes" in res and int(self.thread_id) == tid:
+                self.thread_votes, self.thread_voted = int(res["votes"]), bool(res.get("voted"))
+
+        def fail(e):
+            self.thread_voted = not self.thread_voted
+            self.thread_votes = max(0, self.thread_votes + (1 if self.thread_voted else -1))
+            self.forum_fail(e)
+
+        self.bg(lambda: self.api.toggle_thread_vote(tid), done, fail)
+
+    def send_reply(self):
+        field = self.root.ids.reply_input
+        text = field.text.strip()
+        if not text or not self.thread_id:
+            return
+        tid = int(self.thread_id)
+        field.text = ""
+        Clock.schedule_once(lambda dt: setattr(field, "focus", True), 0.05)
+
+        def done(_):
+            if int(self.thread_id) == tid:
+                self.load_thread()
+                Clock.schedule_once(lambda dt: setattr(self.root.ids.thread_scroll, "scroll_y", 0), 0.4)
+
+        def fail(e):
+            if not field.text:
+                field.text = text
+            self.forum_fail(e)
+
+        self.bg(lambda: self.api.create_reply(tid, text), done, fail)
+
+    def confirm_delete_thread(self):
+        self.confirm("Delete thread?", "This removes the thread and all of its replies.", self.delete_thread_now)
+
+    def delete_thread_now(self):
+        tid = int(self.thread_id)
+
+        def done(_):
+            self.feed_sig = None
+            self.close_thread()
+
+        self.bg(lambda: self.api.delete_thread(tid), done, self.forum_fail)
+
+    def confirm_delete_reply(self, card):
+        rid = int(card.rid)
+        self.confirm("Delete reply?", "This removes the reply.",
+                     lambda: self.bg(lambda: self.api.delete_reply(rid), lambda _: self.load_thread(), self.forum_fail))
+
+    # ---------- writing a thread ----------
+    def open_compose(self, community_id=None):
+        ids = self.root.ids
+        ids.thread_title_input.text = ""
+        ids.thread_body_input.text = ""
+        if self.root.current in ("feed", "community", "me", "communities"):
+            self.compose_from = self.root.current
+        cid = int(community_id or 0)
+        if not cid and self.root.current == "community":
+            cid = int(self.comm_id)
+        if not cid and self.joined:
+            cid = sorted(self.joined)[0]
+        self.compose_comm = cid
+        self.thread_ready, self.thread_chars = False, "0/2000"
+        self.build_comm_chips()
+        self.root.current = "compose"
+        Clock.schedule_once(lambda dt: setattr(ids.thread_title_input, "focus", True), 0.3)
+
+    def close_compose(self):
+        self.root.ids.thread_title_input.focus = False
+        self.root.ids.thread_body_input.focus = False
+        self.root.current = self.compose_from
+
+    def build_comm_chips(self):
+        box = self.root.ids.comp_comms
+        box.clear_widgets()
+        self.comp_chips = []
+        if not self.communities:
+            if not self.forum_ready:
+                self.load_communities(then=self.build_comm_chips)
+            return
+        ordered = sorted(self.communities, key=lambda c: (not c.get("joined"), -int(c.get("members") or 0),
+                                                          c["name"].lower()))[:25]
+        for c in ordered:
+            chip = Chip(text=c["name"], selected=c["id"] == self.compose_comm,
+                        on_release=lambda x, cid=c["id"]: self.select_comm(cid))
+            self.comp_chips.append((c["id"], chip))
+            box.add_widget(chip)
+
+    def select_comm(self, cid):
+        self.compose_comm = int(cid)
+        for c_id, chip in self.comp_chips:
+            chip.selected = c_id == self.compose_comm
+        self.recalc_thread_ready()
+
+    def recalc_thread_ready(self):
+        ids = self.root.ids
+        self.thread_ready = bool(self.compose_comm and len(ids.thread_title_input.text.strip()) >= 3
+                                 and ids.thread_body_input.text.strip())
+        self.thread_chars = f"{len(ids.thread_body_input.text)}/2000"
+
+    def typed_title(self, widget):
+        if len(widget.text) > 120:
+            widget.text = widget.text[:120]
+            return
+        self.recalc_thread_ready()
+
+    def typed_body(self, widget):
+        if len(widget.text) > 2000:
+            widget.text = widget.text[:2000]
+            return
+        self.recalc_thread_ready()
+
+    def submit_thread(self):
+        ids = self.root.ids
+        title, body, cid = ids.thread_title_input.text.strip(), ids.thread_body_input.text.strip(), int(self.compose_comm)
+        if not self.thread_ready:
+            return
+        self.loading = True
+
+        def done(new_id):
+            self.loading = False
+            self.feed_sig = None
+            self.close_compose()
+            self.load_communities()
+            if isinstance(new_id, (int, float)):
+                self.open_thread(int(new_id))
+
+        self.bg(lambda: self.api.create_thread(cid, title, body), done, self.forum_fail)
+
+    # ---------- profiles ----------
+    def stats_text(self, prof, n_threads):
+        t, r, c = prof.get("threads_count"), prof.get("replies_count"), prof.get("communities_count")
+        return f"{n_threads if t is None else t} threads · {r or 0} replies · {c or 0} communities"
+
+    def refresh_me(self):
+        if not self.api.uid or not self.root:
+            return
+        uid = self.api.uid
+
+        def work():
+            try:
+                rows = self.api.threads(author=uid, sort="new")
+            except RuntimeError:
+                rows = []
+            return self.api.profile(uid), rows
+
+        def done(res):
+            prof, rows = res
+            self.me_bio = prof.get("bio") or ""
+            self.me_stats = self.stats_text(prof, len(rows))
+            self.fill_threads(self.root.ids.me_posts, rows, "You have not started a thread yet.")
+
+        self.bg(work, done, lambda e: None)
+
+    def open_user(self, uid):
+        if uid == self.api.uid:
+            self.go_tab("me")
+            return
+        if self.root.current in ("feed", "communities", "contacts", "me", "thread", "community", "people"):
+            self.user_from = self.root.current
+        u = self.user_by_id(uid) or {"id": uid, "username": "?", "display_name": None}
+        self.fill_view(u)
+        self.root.current = "user"
+        self.load_view(uid)
+
+    def fill_view(self, u):
+        name = name_of(u)
+        self.view_uid = u["id"]
+        self.view_name, self.view_username = name, u["username"]
+        self.view_initial, self.view_color = initial(name), avatar_color(u["username"])
+        self.view_primary, self.view_secondary = "Message", ""
+        self.view_bio, self.view_stats = "", ""
+        self.view_hint = presence_text(u.get("seconds_ago"))
+
+    def load_view(self, uid):
+        box = self.root.ids.user_posts
+        box.clear_widgets()
+
+        def work():
+            try:
+                rows = self.api.threads(author=uid, sort="new")
+            except RuntimeError:
+                rows = []
+            return self.api.profile(uid), rows
+
+        def done(res):
+            if self.view_uid != uid:
+                return
+            prof, rows = res
+            self.view_bio = prof.get("bio") or ""
+            self.view_stats = self.stats_text(prof, len(rows))
+            self.fill_threads(box, rows, "No threads yet.")
+
+        self.bg(work, done, lambda e: None)
+
+    def close_user(self):
+        self.root.current = self.user_from
+
+    def view_primary_tap(self):
+        self.open_chat(self.view_uid, self.view_name)
+
+    def view_secondary_tap(self):
+        pass
+
+    # ---------- messaging: who you talk to ----------
+    def open_people(self):
+        if self.root.current in ("contacts", "communities", "feed", "me"):
+            self.people_from = self.root.current
+        self.root.ids.people_search.text = ""
+        self.root.current = "people"
+        self.refresh_people()
+        Clock.schedule_once(lambda dt: setattr(self.root.ids.people_search, "focus", True), 0.3)
+
+    def close_people(self):
+        self.root.ids.people_search.focus = False
+        self.root.current = self.people_from
+
+    def refresh_people(self):
+        if not self.root:
+            return
+        q = self.root.ids.people_search.text.strip().lower()
+        lst = self.root.ids.people_list
+        lst.clear_widgets()
+        shown = 0
+        for u in sorted(self.users, key=lambda u: (u.get("seconds_ago") is None, u.get("seconds_ago") or 0,
+                                                    name_of(u).lower())):
+            name, sec = name_of(u), u.get("seconds_ago")
+            if q and q not in name.lower() and q not in u["username"].lower():
+                continue
+            lst.add_widget(PersonRow(
+                uid=u["id"], name=name, initial=initial(name), color=avatar_color(u["username"]),
+                subtitle=presence_text(sec) or "@" + u["username"], online=is_online(sec),
+                status="member", primary="Message", secondary="",
+                on_release=lambda x, uid=u["id"]: self.open_user(uid)))
+            shown += 1
+            if shown >= 60:
+                break
+        if not shown:
+            lst.add_widget(MDLabel(text="No one found" if q else "No other members yet.", halign="center",
+                                   theme_text_color="Hint", size_hint_y=None, height=dp(120)))
+
+    def person_primary(self, row):
+        self.open_chat(row.uid, row.name)
+
+    def person_secondary(self, row):
+        pass
+
+    def users_key(self, users):
+        return [(u["id"], name_of(u), is_online(u.get("seconds_ago"))) for u in users]
+
+    def refresh_convos(self):
+        """Who you have talked to, with the latest message of each conversation."""
+        if not self.api.uid:
+            return
+
+        def done(found):
+            merged = dict(found)
+            for pid, c in self.convos.items():  # keep anything newer that we already know about
+                if pid not in merged or c["id"] > merged[pid]["id"]:
+                    merged[pid] = c
+            if merged != self.convos:
+                self.convos = merged
+                self.refresh_contacts()
+
+        self.bg(self.api.conversations, done, lambda e: None)
+
+    def refresh_contacts(self):
+        if not self.root:
+            return
+        self.unread_total = sum(self.unread.values())
+        if self.root.current != "contacts":
+            return  # the Chats list is only rebuilt while it is on screen (saves memory)
+        q = self.root.ids.search_field.text.strip().lower()
+        lst = self.root.ids.contact_list
+        lst.clear_widgets()
+        rows = []
+        for pid in set(self.convos) | set(self.unread):
+            u = self.user_by_id(pid)
+            if not u:
+                continue
+            name = name_of(u)
+            if q and q not in name.lower() and q not in u["username"].lower():
+                continue
+            c = self.convos.get(pid)
+            rows.append((c["id"] if c else 0, name, u, c))
+        rows.sort(key=lambda r: (-r[0], r[1].lower()))  # latest conversation first
+        for _, name, u, c in rows:
+            if c and self.prefs.get("previews", True):
+                text = " ".join(c["text"].split())
+                text = text if len(text) <= 38 else text[:36] + "..."
+                sub = ("You: " if c["sender"] == self.api.uid else "") + text
+            else:
+                sub = "@" + u["username"]
+            lst.add_widget(ContactRow(
+                name=name, subtitle=sub, initial=initial(name), avatar_color=avatar_color(u["username"]),
+                unread=self.unread.get(u["id"], 0), online=is_online(u.get("seconds_ago")),
+                streak=self.streaks.get(u["id"], 0),
+                on_release=lambda x, uid=u["id"], n=name: self.open_chat(uid, n)))
+        if not rows:
+            lst.add_widget(MDLabel(
+                text="No matches" if q else "No conversations yet.\nTap the pencil icon to message someone.",
+                halign="center", theme_text_color="Hint", size_hint_y=None, height=dp(140)))
+
+    def enter_app(self):
+        self.me_username = self.api.username
+        self.me_name = self.api.username
+        self.root.ids.pass_field.text = ""
+
+        self.local = LocalDB(os.path.join(self.user_data_dir, f"chat_{self.api.uid}.db"))
+        local = self.local
+        self.users = local.load_users()
+        self.msgs, self.seen, self.unread, self.convos = {}, set(), {}, {}
+        cached_last = local.get_meta("last_id")
+        resume_from = int(cached_last) if cached_last else None
+
+        def init():
+            users = self.api.users()
+            me = self.api.me()
+            last = resume_from if resume_from is not None else self.api.latest_incoming_id()
+            convos = self.api.conversations()
+            try:
+                comms = self.api.communities()
+            except RuntimeError:
+                comms = None  # the forum update (update_v8.sql) has not been run yet
+            local.save_users(users)
+            local.set_meta("last_id", last)
+            try:
+                self.api.touch()
+            except Exception:
+                pass
+            return users, last, me, convos, comms
+
+        def done(res):
+            self.users, self.last_id, me, self.convos, comms = res
+            self.set_me(me)
+            self.loading = False
+            if comms is not None:
+                self.set_communities(comms)
+            self.root.current = "feed"
+            self.refresh_feed()
+            self.refresh_me()
+            self.refresh_streaks()
+            self.refresh_contacts()
+
+        self.bg(init, done)
+
+    def poll(self, dt):
+        if not self.ui_ok or not self.api.uid or self.poll_busy or self.loading:
+            return
+        self.poll_busy = True
+        self.tick += 1
+        if self.tick % 12 == 0 and self.root.current == "feed":
+            self.refresh_feed(silent=True)  # keep Home fresh (about every 30 seconds)
+        if self.tick % 24 == 0:
+            self.refresh_streaks()
+            self.refresh_convos()
+        local = self.local
+        force_users, self.force_users = self.force_users, False
+
+        def work():
+            inc = self.api.incoming(self.last_id)
+            users = self.api.users() if (self.tick % 6 == 0 or force_users) else None
+            if local:
+                if inc:
+                    local.save_messages(inc)
+                    local.set_meta("last_id", max(m["id"] for m in inc))
+                if users is not None:
+                    local.save_users(users)
+            return inc, users
+
+        def done(res):
+            self.poll_busy = False
+            inc, users = res
+            changed = False
+            if users is not None:
+                if self.users_key(users) != self.users_key(self.users):
+                    changed = True
+                self.users = users
+                self.update_peer_status()
+            for m in inc:
+                self.last_id = max(self.last_id, m["id"])
+                if m["id"] in self.seen:
+                    continue
+                self.seen.add(m["id"])
+                peer = m["sender"]
+                self.msgs.setdefault(peer, []).append(m)
+                self.convos[peer] = {"id": m["id"], "sender": peer, "text": m["text"]}
+                if not self.user_by_id(peer):
+                    self.force_users = True  # a message from someone we have not listed yet
+                if peer == self.peer and self.root.current == "chat":
+                    self.add_bubble(m)
+                else:
+                    self.unread[peer] = self.unread.get(peer, 0) + 1
+                changed = True
+            self.unread_total = sum(self.unread.values())
+            if changed and self.root.current == "contacts":
+                self.refresh_contacts()
+            elif changed and self.root.current == "people":
+                self.refresh_people()
+
+        def fail(e):
+            self.poll_busy = False
+
+        self.bg(work, done, fail)
 
     # ---------- error log ----------
     def log_crash(self, tb):
@@ -2792,8 +3881,6 @@ class ChatApp(MDApp):
     def show_err(self, e):
         self.loading = False
         msg = str(e)
-        if "row-level security" in msg and "messages" in msg:
-            msg = "You can only message people who are your friends."
         self.notify(msg[:140])
 
     def toggle_mode(self):
@@ -2806,10 +3893,6 @@ class ChatApp(MDApp):
         self.me_name = self.me.get("display_name") or self.me_username
         self.me_initial = initial(self.me_name)
         self.me_color = avatar_color(self.me_username)
-
-    def users_key(self, users):
-        return [(u["id"], name_of(u), is_online(u.get("seconds_ago")), u.get("note"),
-                 badge_text(u.get("seconds_ago")), u.get("status"), u.get("mutual")) for u in users]
 
     def user_by_id(self, uid):
         return next((u for u in self.users if u["id"] == uid), None)
@@ -2834,30 +3917,6 @@ class ChatApp(MDApp):
 
     def on_resume(self):
         self.heartbeat(0)
-
-    def _on_key(self, window, key, *args):
-        """Android back button: back one screen; from a tab go Home; from Home leave the app."""
-        if key == 27 and self.root:
-            cur = self.root.current
-            if cur == "chat":
-                self.back()
-                return True
-            if cur == "user":
-                self.close_user()
-                return True
-            if cur in ("profile", "password"):
-                self.back_to_settings()
-                return True
-            if cur == "note":
-                self.close_note()
-                return True
-            if cur == "compose":
-                self.close_compose()
-                return True
-            if cur in ("contacts", "people", "me", "settings"):
-                self.go_tab("feed")
-                return True
-        return False
 
     # ---------- auth ----------
     def submit(self):
@@ -2911,44 +3970,6 @@ class ChatApp(MDApp):
         if self.store.exists("session"):
             self.store.delete("session")
 
-    def enter_app(self):
-        self.me_username = self.api.username
-        self.me_name = self.api.username
-        self.root.ids.pass_field.text = ""
-
-        self.local = LocalDB(os.path.join(self.user_data_dir, f"chat_{self.api.uid}.db"))
-        local = self.local
-        self.users = local.load_users()
-        self.msgs, self.seen, self.unread = {}, set(), {}
-        cached_last = local.get_meta("last_id")
-        resume_from = int(cached_last) if cached_last else None
-
-        def init():
-            users = self.api.users()
-            me = self.api.me()
-            last = resume_from if resume_from is not None else self.api.latest_incoming_id()
-            local.save_users(users)
-            local.set_meta("last_id", last)
-            try:
-                self.api.touch()
-            except Exception:
-                pass
-            return users, last, me
-
-        def done(res):
-            self.users, self.last_id, me = res
-            self.request_count = sum(1 for u in self.users if u.get("status") == "incoming")
-            self.set_me(me)
-            self.loading = False
-            self.refresh_contacts()
-            self.root.current = "feed"
-            self.refresh_rail_view()
-            self.refresh_feed()
-            self.refresh_me()
-            self.refresh_streaks()
-
-        self.bg(init, done)
-
     def logout(self):
         api = self.api
         threading.Thread(target=api.sign_out, daemon=True).start()
@@ -2958,7 +3979,8 @@ class ChatApp(MDApp):
             local, self.local = self.local, None
             threading.Thread(target=local.destroy, daemon=True).start()
         self.users, self.msgs, self.unread, self.seen = [], {}, {}, set()
-        self.feed_sig = self.rail_sig = None
+        self.convos, self.communities, self.joined, self.forum_ready = {}, [], set(), False
+        self.feed_sig = None
         self.feed_loaded = False
         self.peer, self.last_id = None, 0
         self.me, self.me_name, self.peer_status, self.peer_active = {}, "", "", False
@@ -2966,148 +3988,14 @@ class ChatApp(MDApp):
         self.root.current = "login"
 
     # ---------- polling for new messages ----------
-    def poll(self, dt):
-        if not self.ui_ok or not self.api.uid or self.poll_busy or self.loading:
-            return
-        self.poll_busy = True
-        self.tick += 1
-        if self.tick % 12 == 0 and self.root.current == "feed":
-            self.refresh_feed(silent=True)  # keep Home fresh (about every 30 seconds)
-        if self.tick % 24 == 0:
-            self.refresh_streaks()
-
-        local = self.local
-
-        def work():
-            inc = self.api.incoming(self.last_id)
-            users = self.api.users() if self.tick % 6 == 0 else None
-            if local:
-                if inc:
-                    local.save_messages(inc)
-                    local.set_meta("last_id", max(m["id"] for m in inc))
-                if users is not None:
-                    local.save_users(users)
-            return inc, users
-
-        def done(res):
-            self.poll_busy = False
-            inc, users = res
-            changed = False
-            if users is not None:
-                if self.users_key(users) != self.users_key(self.users):
-                    changed = True
-                self.users = users
-                self.request_count = sum(1 for u in users if u.get("status") == "incoming")
-                self.update_peer_status()
-            for m in inc:
-                self.last_id = max(self.last_id, m["id"])
-                if m["id"] in self.seen:
-                    continue
-                self.seen.add(m["id"])
-                peer = m["sender"]
-                self.msgs.setdefault(peer, []).append(m)
-                if peer == self.peer and self.root.current == "chat":
-                    self.add_bubble(m)
-                else:
-                    self.unread[peer] = self.unread.get(peer, 0) + 1
-                    changed = True
-            self.unread_total = sum(self.unread.values())
-            if changed and self.root.current in ("contacts", "people", "feed"):
-                self.refresh_contacts()
-
-        def fail(e):
-            self.poll_busy = False
-
-        self.bg(work, done, fail)
 
     # ---------- contacts ----------
-    def refresh_contacts(self):
-        if not self.root:
-            return
-        self.unread_total = sum(self.unread.values())
-        cur = self.root.current
-        if cur == "people":
-            self.refresh_people()
-        elif cur == "feed":
-            self.refresh_rail_view()
-        if cur != "contacts":
-            return  # the Chats list is only rebuilt while it is on screen (saves memory)
-        q = self.root.ids.search_field.text.strip().lower()
-        lst = self.root.ids.contact_list
-        lst.clear_widgets()
-        rows = []
-        for u in self.users:
-            if not is_friend(u):
-                continue  # only friends can be chatted with
-            name = name_of(u)
-            if q and q not in name.lower() and q not in u["username"].lower():
-                continue
-            last = self.local.last_message(self.api.uid, u["id"]) if self.local and self.api.uid else None
-            rows.append((last["id"] if last else 0, name, u, last))
-        rows.sort(key=lambda r: (-r[0], r[1].lower()))  # recent chats first
-        for _, name, u, last in rows:
-            if last and self.prefs.get("previews", True):
-                text = " ".join(last["text"].split())
-                text = text if len(text) <= 38 else text[:36] + "..."
-                sub = ("You: " if last["sender"] == self.api.uid else "") + text
-            else:
-                sub = "@" + u["username"]
-            lst.add_widget(ContactRow(
-                name=name, subtitle=sub, initial=initial(name),
-                avatar_color=avatar_color(u["username"]), unread=self.unread.get(u["id"], 0),
-                online=is_online(u.get("seconds_ago")), streak=self.streaks.get(u["id"], 0),
-                on_release=lambda x, uid=u["id"], n=name: self.open_chat(uid, n)))
-        if not rows:
-            lst.add_widget(MDLabel(
-                text="No matches" if q else "No one else has joined yet.\nInvite a friend to create an account!",
-                halign="center", theme_text_color="Hint", size_hint_y=None, height=dp(140)))
-    def refresh_rail_view(self):
-        """Show or hide the notes strip on Home, rebuilding it only when something changed."""
-        sv = self.root.ids.rail_sv
-        hide = not self.prefs.get("rail", True)
-        sv.height, sv.opacity = (0, 0) if hide else (dp(126), 1)
-        if hide:
-            self.rail_sig = None
-            return
-        sig = (self.me_initial, self.me.get("note"),
-               tuple((u["id"], name_of(u), u.get("note"), is_online(u.get("seconds_ago")),
-                      badge_text(u.get("seconds_ago"))) for u in self.users if is_friend(u)))
-        if sig != self.rail_sig:
-            self.rail_sig = sig
-            self.refresh_rail()
-
-    def refresh_rail(self):
-        """Top strip: your note, then friends who are online / recently active or have a note."""
-        rail = self.root.ids.rail
-        rail.clear_widgets()
-        mine = self.me.get("note") or ""
-        rail.add_widget(StoryItem(
-            name="Your note", initial=self.me_initial, color=self.me_color,
-            note=short(mine, 14) if mine else "What's up?", placeholder=not mine, plus=True,
-            on_release=lambda x: self.open_note()))
-        people = []
-        for u in self.users:
-            if not is_friend(u):
-                continue
-            sec = u.get("seconds_ago")
-            if is_online(sec) or u.get("note") or (sec is not None and sec < 86400):
-                people.append(u)
-        people.sort(key=lambda u: (u.get("seconds_ago") is None, u.get("seconds_ago") or 0))
-        for u in people[:20]:
-            sec, full = u.get("seconds_ago"), name_of(u)
-            rail.add_widget(StoryItem(
-                name=short(full.split()[0], 10), initial=initial(full),
-                color=avatar_color(u["username"]), note=short(u.get("note") or "", 14),
-                online=is_online(sec), badge=badge_text(sec),
-                on_release=lambda x, uid=u["id"], n=full: self.open_chat(uid, n)))
 
     # ---------- chat ----------
     def open_chat(self, uid, name):
-        other = self.user_by_id(uid)
-        if other and not is_friend(other):
-            self.notify(f"Add {name} as a friend to start a conversation.")
+        if uid == self.api.uid:
             return
-        if self.root.current in ("feed", "contacts", "people", "me", "user"):
+        if self.root.current in ("feed", "contacts", "communities", "me", "user", "people", "thread", "community"):
             self.chat_from = self.root.current
         self.peer = uid
         self.unread.pop(uid, None)
@@ -3136,6 +4024,9 @@ class ChatApp(MDApp):
         """Show server history; only touch the screen if something changed (no flicker or jump)."""
         if self.peer != uid:
             return
+        if rows:
+            last = rows[-1]
+            self.convos[uid] = {"id": last["id"], "sender": last["sender"], "text": last["text"]}
         old_ids = [m["id"] for m in self.msgs.get(uid, [])]
         new_ids = [m["id"] for m in rows]
         self.msgs[uid] = rows
@@ -3160,7 +4051,6 @@ class ChatApp(MDApp):
         ids = self.root.ids
         self._profile_loading = True  # don't treat these programmatic changes as user taps
         ids.active_row.active = self.me.get("show_active") is not False
-        ids.rail_row.active = bool(self.prefs.get("rail", True))
         ids.preview_row.active = bool(self.prefs.get("previews", True))
         self._profile_loading = False
         self.root.current = "settings"
@@ -3217,354 +4107,14 @@ class ChatApp(MDApp):
         self.bg(work, done, fail)
 
     # ---------- tabs ----------
-    def go_tab(self, name):
-        self.root.current = name
-        if name == "feed":
-            self.refresh_rail_view()
-            self.refresh_feed()
-        elif name == "people":
-            self.refresh_people()
-        elif name == "contacts":
-            self.refresh_contacts()
-            self.refresh_streaks()
-        elif name == "me":
-            self.refresh_me()
 
-    def open_search(self):
-        self.go_tab("people")
-        Clock.schedule_once(lambda dt: setattr(self.root.ids.people_search, "focus", True), 0.2)
-
-    # ---------- friends ----------
-    def section_header(self, text):
-        box = MDBoxLayout(size_hint_y=None, height=dp(34), padding=(dp(14), dp(8), dp(14), 0))
-        box.add_widget(SectionLabel(text=text))
-        return box
-
-    def refresh_people(self):
-        """Friends tab: requests, suggestions, your friends (or search results)."""
-        if not self.root:
-            return
-        q = self.root.ids.people_search.text.strip().lower()
-        lst = self.root.ids.people_list
-        lst.clear_widgets()
-
-        def row(u):
-            name, st, sec = name_of(u), u.get("status") or "friends", u.get("seconds_ago")
-            if st == "friends":
-                sub = presence_text(sec) or "@" + u["username"]
-            elif st == "outgoing":
-                sub = "Request sent"
-            elif st == "incoming":
-                sub = mutual_text(u.get("mutual")) or "Wants to be your friend"
-            else:
-                sub = mutual_text(u.get("mutual")) or "New on Chatly"
-            primary, secondary = buttons_for(st)
-            return PersonRow(
-                uid=u["id"], name=name, initial=initial(name), color=avatar_color(u["username"]),
-                subtitle=sub, online=is_online(sec), status=st, primary=primary, secondary=secondary,
-                on_release=lambda x, uid=u["id"]: self.open_user(uid))
-
-        def add_section(title, users, empty=""):
-            lst.add_widget(self.section_header(title))
-            for u in users:
-                lst.add_widget(row(u))
-            if not users and empty:
-                lst.add_widget(MDLabel(text=empty, halign="center", theme_text_color="Hint",
-                                       size_hint_y=None, height=dp(70)))
-
-        def by_name(u):
-            return name_of(u).lower()
-
-        if q:
-            hits = [u for u in self.users if q in name_of(u).lower() or q in u["username"].lower()]
-            if hits:
-                add_section("SEARCH RESULTS", sorted(hits, key=by_name))
-            else:
-                lst.add_widget(MDLabel(text="No one found", halign="center", theme_text_color="Hint",
-                                       size_hint_y=None, height=dp(120)))
-            return
-        incoming = [u for u in self.users if u.get("status") == "incoming"]
-        sent = [u for u in self.users if u.get("status") == "outgoing"]
-        friends = [u for u in self.users if is_friend(u)]
-        suggestions = sorted((u for u in self.users if u.get("status") == "none"),
-                             key=lambda u: (-int(u.get("mutual") or 0), by_name(u)))[:15]
-        if incoming:
-            add_section(f"FRIEND REQUESTS ({len(incoming)})", sorted(incoming, key=by_name))
-        if suggestions:
-            add_section("PEOPLE YOU MAY KNOW", suggestions)
-        if sent:
-            add_section("REQUESTS YOU SENT", sorted(sent, key=by_name))
-        friends.sort(key=lambda u: (u.get("seconds_ago") is None, u.get("seconds_ago") or 0, by_name(u)))
-        add_section(f"YOUR FRIENDS ({len(friends)})" if friends else "YOUR FRIENDS", friends,
-                    empty="No friends yet. Send a request to someone above." if suggestions else
-                          "No friends yet. Use search to find people.")
-
-    def person_primary(self, row):
-        self.do_primary(row.uid, row.status, row.name)
-
-    def person_secondary(self, row):
-        self.do_secondary(row.uid, row.status, row.name)
-
-    def do_primary(self, uid, status, name):
-        if status == "none":
-            self.friend_action(uid, "add")
-        elif status == "incoming":
-            self.friend_action(uid, "accept")
-        elif status == "friends":
-            self.open_chat(uid, name)
-
-    def do_secondary(self, uid, status, name):
-        if status == "outgoing":
-            self.friend_action(uid, "cancel")
-        elif status == "incoming":
-            self.friend_action(uid, "decline")
-        elif status == "friends":
-            self.confirm_unfriend(uid, name)
-
-    def friend_action(self, uid, kind):
-        """kind: add | cancel | accept | decline | unfriend"""
-        def work():
-            if kind == "add":
-                return self.api.send_request(uid)
-            if kind == "accept":
-                return self.api.respond_request(uid, True)
-            if kind == "decline":
-                return self.api.respond_request(uid, False)
-            return self.api.remove_friend(uid)  # cancel or unfriend
-
-        self.bg(work, lambda status: self.set_status(uid, status), self.friends_fail)
-
-    def friends_fail(self, e):
-        self.loading = False
-        msg = str(e)
-        if any(k in msg for k in ("friend", "schema cache", "set_bio")):
-            msg = "Friends are not set up in your Supabase project yet. Run update_v6.sql in the SQL Editor."
-        self.notify(msg[:200])
-
-    def set_status(self, uid, status):
-        status = status if isinstance(status, str) else "none"
-        for u in self.users:
-            if u["id"] == uid:
-                u["status"] = status
-        self.request_count = sum(1 for u in self.users if u.get("status") == "incoming")
-        self.refresh_contacts()  # also redraws the Friends tab and the notes strip
-        if self.root.current == "user" and self.view_uid == uid:
-            self.fill_view(self.user_by_id(uid))
-            self.load_view(uid)
-
-    def confirm_unfriend(self, uid, name):
-        def close(*args):
-            dlg.dismiss()
-
-        def go(*args):
-            dlg.dismiss()
-            self.friend_action(uid, "unfriend")
-
-        dlg = MDDialog(
-            title="Unfriend?", text=f"{name} will no longer be able to see your posts or message you.",
-            buttons=[MDFlatButton(text="CANCEL", on_release=close),
-                     MDFlatButton(text="UNFRIEND", theme_text_color="Custom",
-                                  text_color=(0.86, 0.2, 0.25, 1), on_release=go)])
-        dlg.open()
+    # ---------- chat streaks ----------
 
     # ---------- other people's profiles ----------
-    def open_user(self, uid):
-        if uid == self.api.uid:
-            self.go_tab("me")
-            return
-        if self.root.current in ("feed", "contacts", "people", "me"):
-            self.user_from = self.root.current
-        u = self.user_by_id(uid) or {"id": uid, "username": "?", "display_name": None,
-                                     "status": "none", "mutual": 0}
-        self.fill_view(u)
-        self.root.current = "user"
-        self.load_view(uid)
-
-    def fill_view(self, u):
-        if not u:
-            return
-        name, st = name_of(u), u.get("status") or "friends"
-        self.view_uid = u["id"]
-        self.view_name, self.view_username = name, u["username"]
-        self.view_initial, self.view_color = initial(name), avatar_color(u["username"])
-        self.view_status = st
-        self.view_primary, self.view_secondary = buttons_for(st)
-        self.view_bio = ""
-        if st == "friends":
-            self.view_hint, self.view_stats = "", ""
-        else:
-            first = name.split()[0] if name.split() else name
-            self.view_hint = f"Add {first} as a friend to see their profile and posts."
-            self.view_stats = mutual_text(u.get("mutual"))
-
-    def load_view(self, uid):
-        """Bio, counts and posts: the server only returns them for friends."""
-        st = self.view_status
-        box = self.root.ids.user_posts
-        box.clear_widgets()
-        if st != "friends":
-            return
-
-        def work():
-            try:
-                rows = self.api.feed(uid)
-            except RuntimeError:
-                rows = []
-            return self.api.profile(uid), rows
-
-        def done(res):
-            if self.view_uid != uid:
-                return
-            prof, rows = res
-            self.view_bio = prof.get("bio") or ""
-            fc = prof.get("friends_count")
-            pc = prof.get("posts_count") if prof.get("posts_count") is not None else len(rows)
-            self.view_stats = f"{fc or 0} friends · {pc} posts"
-            self.fill_posts(box, rows, "No posts yet.")
-
-        self.bg(work, done, lambda e: None)
-
-    def close_user(self):
-        self.root.current = self.user_from
-        if self.user_from == "feed":
-            self.refresh_feed(silent=True)
-        elif self.user_from == "people":
-            self.refresh_people()
-
-    def view_primary_tap(self):
-        self.do_primary(self.view_uid, self.view_status, self.view_name)
-
-    def view_secondary_tap(self):
-        self.do_secondary(self.view_uid, self.view_status, self.view_name)
 
     # ---------- my profile tab ----------
-    def refresh_me(self):
-        if not self.api.uid or not self.root:
-            return
-        uid = self.api.uid
-
-        def work():
-            try:
-                rows = self.api.feed(uid)
-            except RuntimeError:
-                rows = []
-            return self.api.profile(uid), rows
-
-        def done(res):
-            prof, rows = res
-            self.me_bio = prof.get("bio") or ""
-            fc = prof.get("friends_count")
-            if fc is None:
-                fc = sum(1 for u in self.users if is_friend(u))
-            pc = prof.get("posts_count") if prof.get("posts_count") is not None else len(rows)
-            self.me_stats = f"{fc} friends · {pc} posts"
-            self.fill_posts(self.root.ids.me_posts, rows, "You have not posted yet.")
-
-        self.bg(work, done, lambda e: None)
-
-    def fill_posts(self, box, rows, empty):
-        box.clear_widgets()
-        if not rows:
-            box.add_widget(MDLabel(text=empty, halign="center", theme_text_color="Hint",
-                                   size_hint_y=None, height=dp(100)))
-            return
-        for r in rows:
-            box.add_widget(self.post_card(r))
 
     # ---------- home feed ----------
-    def refresh_feed(self, silent=False):
-        if not self.api.uid or not self.root:
-            return
-        self.feed_req += 1
-        req = self.feed_req
-
-        def done(rows):
-            if req != self.feed_req:
-                return  # an older answer
-            sig = [{k: v for k, v in r.items() if k != "age_seconds"} for r in rows]
-            if sig == self.feed_sig and self.feed_loaded:
-                return  # nothing changed: keep the cards we already have
-            self.feed_sig = sig
-            self.render_feed(rows)
-
-        def fail(e):
-            if req != self.feed_req or (silent and self.feed_loaded):
-                return
-            msg = str(e)
-            if "get_feed" in msg or "schema cache" in msg:
-                self.feed_message("Posts need a database update. Run update_v5.sql in the Supabase SQL Editor.")
-            else:
-                self.feed_message("Could not load posts. Check your connection.")
-
-        self.bg(self.api.feed, done, fail)
-
-    def feed_message(self, text):
-        self.feed_sig = None
-        box = self.root.ids.feed_list
-        box.clear_widgets()
-        box.add_widget(MDLabel(text=text, halign="center", theme_text_color="Hint",
-                               size_hint_y=None, height=dp(120)))
-
-    def post_card(self, r):
-        name = (r.get("display_name") or r.get("username") or "?").strip()
-        card = PostCard(
-            pid=r["id"], author_id=r["author"], name=name, initial=initial(name),
-            color=avatar_color(r.get("username") or name), meta=age_text(r.get("age_seconds")),
-            prompt=("Question of the day: " + r["prompt"]) if r.get("prompt") else "",
-            body=r["body"], likes=int(r.get("likes") or 0), liked=bool(r.get("liked")),
-            mine=r["author"] == self.api.uid)
-        poll = r.get("poll") or []
-        if poll:
-            votes = r.get("votes") or {}
-            card.counts = [int(votes.get(str(i), 0)) for i in range(len(poll))]
-            mv = r.get("my_vote")
-            card.my_vote = -1 if mv is None else int(mv)
-            rows = []
-            for i, text in enumerate(poll):
-                opt = PollOption(text=str(text), idx=i, card=card, on_release=lambda x: self.vote(x))
-                card.ids.poll_box.add_widget(opt)
-                rows.append(opt)
-            card.poll_rows = rows
-            self.update_poll_rows(card)
-        return card
-
-    def update_poll_rows(self, card):
-        total = sum(card.counts)
-        for opt in card.poll_rows:
-            n = card.counts[opt.idx] if opt.idx < len(card.counts) else 0
-            opt.fill = (n / total) if total else 0
-            opt.pct_text = f"{round(100 * n / total)}%" if total else ""
-            opt.mine = card.my_vote == opt.idx
-        card.votes_text = (f"{total} vote" + ("" if total == 1 else "s")) if card.poll_rows else ""
-
-    def vote(self, opt):
-        card = opt.card
-        old, new = int(card.my_vote), int(opt.idx)
-        if old == new:
-            return
-        counts = list(card.counts)
-        if 0 <= old < len(counts):
-            counts[old] = max(0, counts[old] - 1)
-        counts[new] += 1
-        card.counts, card.my_vote = counts, new  # show the vote instantly
-        self.update_poll_rows(card)
-        pid = int(card.pid)
-
-        def done(res):
-            if isinstance(res, dict) and res is not None:
-                card.counts = [int(res.get(str(i), 0)) for i in range(len(card.counts))]
-                self.update_poll_rows(card)
-
-        def fail(e):  # put the previous vote back
-            back = list(card.counts)
-            back[new] = max(0, back[new] - 1)
-            if 0 <= old < len(back):
-                back[old] += 1
-            card.counts, card.my_vote = back, old
-            self.update_poll_rows(card)
-            self.show_err(e)
-
-        self.bg(lambda: self.api.vote_poll(pid, new), done, fail)
 
     def refresh_streaks(self):
         """Chat streaks: days in a row both of you messaged (shown in Chats and the chat header)."""
@@ -3579,179 +4129,9 @@ class ChatApp(MDApp):
 
         self.bg(self.api.streaks, done, lambda e: None)
 
-    def render_feed(self, rows):
-        self.feed_loaded = True
-        if not rows:
-            self.feed_message("No posts yet. Add friends to see their posts, or share your own!")
-            return
-        box = self.root.ids.feed_list
-        box.clear_widgets()
-        for r in rows:
-            box.add_widget(self.post_card(r))
-
-    def toggle_like(self, card):
-        card.liked = not card.liked
-        card.likes = max(0, card.likes + (1 if card.liked else -1))
-        pid = int(card.pid)
-
-        def done(res):
-            if res and "likes" in res:
-                card.likes, card.liked = int(res["likes"]), bool(res.get("liked"))
-
-        def fail(e):  # undo the instant change
-            card.liked = not card.liked
-            card.likes = max(0, card.likes + (1 if card.liked else -1))
-            self.show_err(e)
-
-        self.bg(lambda: self.api.toggle_like(pid), done, fail)
-
-    def confirm_delete_post(self, card):
-        pid = int(card.pid)
-
-        def close(*args):
-            dlg.dismiss()
-
-        def go(*args):
-            dlg.dismiss()
-            self.bg(lambda: self.api.delete_post(pid), lambda _: self.refresh_feed(), self.show_err)
-
-        dlg = MDDialog(
-            title="Delete post?", text="This removes your post for everyone.",
-            buttons=[MDFlatButton(text="CANCEL", on_release=close),
-                     MDFlatButton(text="DELETE", theme_text_color="Custom",
-                                  text_color=(0.86, 0.2, 0.25, 1), on_release=go)])
-        dlg.open()
-
-    def reply_to_post(self, card):
-        """Unique to Chatly: answer a post privately, in a chat that quotes it."""
-        self.open_chat(card.author_id, card.name)
-        field = self.root.ids.msg_field
-        field.text = 'Re: "' + short(card.body, 40) + '" '
-        Clock.schedule_once(lambda dt: setattr(field, "focus", True), 0.3)
-
     # ---------- composer ----------
-    def open_compose(self, prompt=""):
-        ids = self.root.ids
-        ids.post_input.text = ""
-        self.post_prompt, self.post_poll_on = prompt, False
-        for i in range(4):
-            ids[f"poll_opt{i}"].text = ""
-        self.post_ready, self.post_chars = False, "0/500"
-        self.root.current = "compose"
-        Clock.schedule_once(lambda dt: setattr(ids.post_input, "focus", True), 0.3)
-
-    def answer_prompt(self):
-        self.open_compose(self.prompt_text)
-
-    def close_compose(self):
-        self.root.ids.post_input.focus = False
-        self.root.current = "feed"
-
-    def on_post_text(self, widget):
-        text = widget.text
-        if len(text) > 500:
-            widget.text = text[:500]
-            return
-        self.post_chars = f"{len(text)}/500"
-        self.recalc_post_ready()
-
-    def poll_options(self):
-        ids = self.root.ids
-        return [o for o in (ids[f"poll_opt{i}"].text.strip()[:40] for i in range(4)) if o]
-
-    def recalc_post_ready(self):
-        ok = bool(self.root.ids.post_input.text.strip())
-        if ok and self.post_poll_on:
-            opts = self.poll_options()
-            ok = len(opts) >= 2 and len({o.lower() for o in opts}) == len(opts)
-        self.post_ready = ok
-
-    def toggle_poll(self):
-        self.post_poll_on = not self.post_poll_on
-        self.recalc_post_ready()
-
-    def on_poll_text(self, widget):
-        if len(widget.text) > 40:
-            widget.text = widget.text[:40]
-            return
-        self.recalc_post_ready()
-
-    def share_post(self):
-        text = self.root.ids.post_input.text.strip()
-        if not text or not self.post_ready:
-            return
-        prompt = self.post_prompt
-        poll = self.poll_options() if self.post_poll_on else []
-        self.loading = True
-
-        def done(_):
-            self.loading = False
-            self.close_compose()
-            self.refresh_feed()
-
-        def fail(e):
-            self.loading = False
-            msg = str(e)
-            if poll and ("p_poll" in msg or "create_post" in msg or "schema cache" in msg):
-                msg = "Polls are not set up yet. Run update_v7.sql in the Supabase SQL Editor."
-            elif "create_post" in msg or "schema cache" in msg:
-                msg = "Posts are not set up yet. Run update_v5.sql in the Supabase SQL Editor."
-            self.notify(msg[:200])
-
-        self.bg(lambda: self.api.create_post(text, prompt, poll), done, fail)
 
     # ---------- notes (Messenger-style composer) ----------
-    def open_note(self):
-        ids = self.root.ids
-        current = self.me.get("note") or ""
-        ids.note_input.text = current
-        self.has_note = bool(current)
-        self.note_ready = False  # nothing new to share yet
-        self.root.current = "note"
-        Clock.schedule_once(lambda dt: setattr(ids.note_input, "focus", True), 0.35)
-
-    def close_note(self):
-        self.root.ids.note_input.focus = False
-        self.root.current = "feed"
-        self.refresh_contacts()
-
-    def on_note_text(self, widget):
-        text = widget.text
-        if len(text) > 60:
-            widget.text = text[:60]  # notes are limited to 60 characters
-            return
-        t = text.strip()
-        self.note_ready = bool(t) and t != (self.me.get("note") or "")
-
-    def share_note(self):
-        text = self.root.ids.note_input.text.strip()
-        if not text or not self.note_ready:
-            return
-        self.loading = True
-
-        def done(_):
-            self.loading = False
-            self.me["note"] = text
-            self.close_note()
-
-        self.bg(lambda: self.api.set_note(text), done, self.note_fail)
-
-    def delete_note(self):
-        self.loading = True
-
-        def done(_):
-            self.loading = False
-            self.me["note"] = None
-            self.close_note()
-
-        self.bg(lambda: self.api.set_note(""), done, self.note_fail)
-
-    def note_fail(self, e):
-        self.loading = False
-        msg = str(e)
-        if "set_note" in msg or "schema cache" in msg:
-            msg = "Notes are not set up in your Supabase project yet. Run update_v3.sql in the SQL Editor."
-        self.notify(msg[:200])
 
     def set_pref(self, key, value):
         """Device-level preferences (kept after log out)."""
@@ -3868,6 +4248,7 @@ class ChatApp(MDApp):
 
         def done(m):
             self.seen.add(m["id"])
+            self.convos[peer] = {"id": m["id"], "sender": m["sender"], "text": m["text"]}
             self.msgs.setdefault(peer, []).append(m)
             if self.peer == peer:
                 self.add_bubble(m)

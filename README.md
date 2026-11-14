@@ -1,50 +1,28 @@
-# Chatly - Messenger-style Android chat (KivyMD + Supabase)
+# Chatly Forum
 
-## 1. Supabase setup
-1. Create a project at supabase.com.
-2. SQL Editor -> paste and run `supabase/schema.sql`.
-3. Authentication -> Providers -> Email. For quick testing turn OFF "Confirm email".
-4. Project Settings -> API: copy the Project URL and the anon public key.
+A community forum app with private messaging, built with Python, KivyMD and Supabase, and compiled to an Android APK by GitHub Actions.
 
-## 2. GitHub secrets
-Repo -> Settings -> Secrets and variables -> Actions -> New repository secret:
-- SUPABASE_URL
-- SUPABASE_ANON_KEY
+## What it does
+- **Home**: a feed of threads from the communities you joined (or popular threads if you haven't joined any). Sort by *New* or *Top*.
+- **Communities**: browse, search, join, leave and create communities. The creator is the moderator and can remove any thread or reply in it.
+- **Threads and replies**: write threads (title + details), reply, and upvote threads and replies. Authors can delete their own posts.
+- **Messaging**: direct messages with any member. Unread badges, "active now" status, message previews, saved history, and chat streaks (days in a row you both messaged).
+- **Profiles**: display name, bio, your threads, and anyone else's profile with a Message button.
+- **Settings**: edit profile, change password, privacy (show when I'm active), message previews, clear saved chats, error log, log out, delete account.
 
-## 3. Build
-Push to main (or run the workflow manually in the Actions tab) and download the `chatly-apk` artifact.
+## Setup
+1. **Supabase**: create a project. In the SQL Editor run `supabase/schema.sql` (new project), or run the update files in order if you already have an older version: `update_v2.sql` ... `update_v8.sql`.
+2. **Keys**: put your project URL and publishable key in `config.py`, or add the GitHub secrets `SUPABASE_URL` and `SUPABASE_ANON_KEY`.
+3. **Build**: push to GitHub. The workflow in `.github/workflows/build.yml` builds the APK (Actions tab -> artifact `chatly-apk`).
 
-For local testing, edit `config.py` and run `python main.py`.
+## Files
+- `main.py`: tiny launcher; shows the real error on screen if the app cannot start.
+- `chatly_app.py`: the app (layout + logic).
+- `errscreen.py`: plain-Kivy error screen with a Copy button.
+- `supabase/`: database setup and updates (`update_v8.sql` adds the forum).
 
-## Updating an existing Supabase project (display names + active status)
-Run `supabase/update_v2.sql` once in the Supabase SQL Editor. New projects can run `supabase/schema.sql` instead.
-The app still works without this update, but display names and "Active now" stay off until it is run.
+## If something crashes
+Each page loads on its own: a broken page shows a message and the rest still works. If the app dies while a page is loading or showing, that page is switched off next time (tap "Try this page again", then reopen the app). Errors are saved: Menu > Settings > About > View error log > Copy.
 
-## Notes + active friends strip
-Run `supabase/update_v3.sql` once (after update_v2.sql) to enable notes. Without it the strip still shows
-friends who are active, but notes are off.
-
-## Settings: delete account
-Run `supabase/update_v4.sql` once to enable Settings -> Delete account. Everything else in Settings works without it.
-
-## Home feed (Facebook Lite style) + unique features
-Run `supabase/update_v5.sql` once to enable posts, vibes, vanishing posts and likes.
-Without it, chats still work and Home shows a message asking you to run the update.
-
-## Friends, suggestions, bios (friends-only chat, posts and profiles)
-Run `supabase/update_v6.sql` once (after v2-v5). People who already exchanged messages are made friends automatically.
-Until it is run, the app keeps working as before (everyone counts as a friend and friend buttons show a setup message).
-
-## Polls and chat streaks (replace vibes + vanishing posts)
-Run `supabase/update_v7.sql` once (after v2-v6). Posts can carry a poll; friends vote and see live results.
-Chats show a streak counter when both of you message on consecutive days.
-
-## If the app crashes
-`main.py` is now a tiny launcher and the app lives in `chatly_app.py` (plus `errscreen.py`). If Chatly fails while loading,
-it shows the real error on screen with a "Copy error" button instead of closing. Errors that happen while you use the app
-are saved too: Menu > Settings > About > View error log > Copy.
-
-## If a page crashes the app
-Each page of the app now loads on its own. If one fails, it shows a message and the rest of the app still works.
-If the app dies while a page is loading or on screen, that page is switched off the next time you open the app
-(login is never switched off). On that page tap "Try this page again", then close and reopen the app.
+## Notes
+The old friends, posts, polls and notes tables from earlier versions are left in the database but the app no longer uses them.
