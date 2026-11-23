@@ -6,6 +6,7 @@ A community forum app with private messaging, built with Python, KivyMD and Supa
 - **Home**: a feed of threads from the communities you joined (or popular threads if you haven't joined any). Sort by *New* or *Top*.
 - **Communities**: browse, search, join, leave and create communities. The creator is the moderator and can remove any thread or reply in it.
 - **Threads and replies**: write threads (title + details), reply, and upvote threads and replies. Authors can delete their own posts.
+- **Saved threads**: bookmark useful discussions and revisit them from the Saved feed tab; saved lists stay on this device and are private to your account.
 - **Messaging**: direct messages with any member. Unread badges, "active now" status, message previews, saved history, and chat streaks (days in a row you both messaged).
 - **Profiles**: display name, bio, your threads, and anyone else's profile with a Message button.
 - **Settings**: edit profile, change password, privacy (show when I'm active), message previews, clear saved chats, error log, log out, delete account.

@@ -557,10 +557,23 @@ KV = """
             theme_text_color: "Custom"
             text_color: MUTED
             size_hint: None, None
-            width: dp(150)
+            width: dp(122)
             text_size: self.width, None
             height: self.texture_size[1]
             pos_hint: {"center_y": .5}
+
+        TapBox:
+            size_hint: None, None
+            size: dp(34), dp(34)
+            pos_hint: {"center_y": .5}
+            on_release: app.toggle_saved_thread(root)
+            MDIcon:
+                icon: "bookmark" if root.saved else "bookmark-outline"
+                size_hint: None, None
+                size: dp(22), dp(22)
+                pos_hint: {"center_x": .5, "center_y": .5}
+                theme_text_color: "Custom"
+                text_color: PRIMARY if root.saved else MUTED
 
 <ReplyCard>:
     orientation: "vertical"
@@ -960,6 +973,10 @@ MDScreenManager:
                             text: "Top"
                             selected: app.feed_sort == "top"
                             on_release: app.set_sort("top")
+                        Chip:
+                            text: "Saved"
+                            selected: app.feed_sort == "saved"
+                            on_release: app.set_sort("saved")
                         Widget:
                     MDBoxLayout:
                         id: feed_list
@@ -1844,6 +1861,18 @@ MDScreenManager:
                             Widget:
                             TapBox:
                                 size_hint: None, None
+                                size: dp(44), dp(34)
+                                pos_hint: {"center_y": .5}
+                                on_release: app.toggle_thread_saved()
+                                MDIcon:
+                                    icon: "bookmark" if app.thread_saved else "bookmark-outline"
+                                    size_hint: None, None
+                                    size: dp(22), dp(22)
+                                    pos_hint: {"center_x": .5, "center_y": .5}
+                                    theme_text_color: "Custom"
+                                    text_color: PRIMARY if app.thread_saved else MUTED
+                            TapBox:
+                                size_hint: None, None
                                 size: (dp(48), dp(34)) if app.thread_can_delete else (0, 0)
                                 pos_hint: {"center_y": .5}
                                 opacity: 1 if app.thread_can_delete else 0
@@ -1882,6 +1911,7 @@ MDScreenManager:
                         id: reply_input
                         hint_text: "Write a reply..."
                         multiline: False
+                        on_text: app.limit_text(self, 1000)
                         text_validate_unfocus: False
                         background_color: 0, 0, 0, 0
                         background_normal: ""
@@ -1900,6 +1930,7 @@ MDScreenManager:
                     md_bg_color: PRIMARY
                     MDIconButton:
                         icon: "send"
+                        disabled: app.reply_sending
                         pos_hint: {"center_x": .5, "center_y": .5}
                         theme_icon_color: "Custom"
                         icon_color: WHITE
@@ -2199,6 +2230,7 @@ MDScreenManager:
                         id: msg_field
                         hint_text: "Message"
                         multiline: False
+                        on_text: app.limit_text(self, 2000)
                         text_validate_unfocus: False
                         background_color: 0, 0, 0, 0
                         background_normal: ""
@@ -2217,6 +2249,7 @@ MDScreenManager:
                     md_bg_color: PRIMARY
                     MDIconButton:
                         icon: "send"
+                        disabled: app.sending_message
                         pos_hint: {"center_x": .5, "center_y": .5}
                         theme_icon_color: "Custom"
                         icon_color: WHITE
@@ -2323,6 +2356,7 @@ class Supa:
         self.email = ""
         self.exp = 0
         self.on_tokens = on_tokens
+        self._refresh_lock = threading.Lock()
 
     def _req(self, method, path, auth=True, headers=None, **kw):
         if auth:
@@ -2356,8 +2390,12 @@ class Supa:
 
     def ensure(self):
         if self.refresh and time.time() > self.exp:
-            self._set(self._req("POST", "/auth/v1/token?grant_type=refresh_token", auth=False,
-                                json={"refresh_token": self.refresh}))
+            with self._refresh_lock:
+                # Several background requests can hit an expired session together. Supabase
+                # rotates refresh tokens, so only the first request may use the old token.
+                if self.refresh and time.time() > self.exp:
+                    self._set(self._req("POST", "/auth/v1/token?grant_type=refresh_token", auth=False,
+                                        json={"refresh_token": self.refresh}))
 
     # ----- auth -----
     def sign_up(self, email, password, username, display_name=""):
@@ -2760,6 +2798,8 @@ class ThreadCard(ButtonBehavior, MDBoxLayout):
     votes = NumericProperty(0)
     replies = NumericProperty(0)
     voted = BooleanProperty(False)
+    saved = BooleanProperty(False)
+    saved_snapshot = ObjectProperty(None)
 
 
 class ReplyCard(MDBoxLayout):
@@ -2803,6 +2843,8 @@ class ContactRow(ButtonBehavior, MDBoxLayout):
 class ChatApp(MDApp):
     signup_mode = BooleanProperty(False)
     loading = BooleanProperty(False)
+    sending_message = BooleanProperty(False)
+    reply_sending = BooleanProperty(False)
     me_name = StringProperty("")
     peer_name = StringProperty("")
     peer_initial = StringProperty("")
@@ -2849,6 +2891,7 @@ class ChatApp(MDApp):
     thread_voted = BooleanProperty(False)
     thread_replies = NumericProperty(0)
     thread_can_delete = BooleanProperty(False)
+    thread_saved = BooleanProperty(False)
     compose_comm = NumericProperty(0)
     thread_ready = BooleanProperty(False)
     thread_chars = StringProperty("0/2000")
@@ -2880,6 +2923,7 @@ class ChatApp(MDApp):
         self.convos, self.comp_chips, self.force_users = {}, [], False
         self.streaks = {}
         self.feed_sig = None
+        self.saved_threads = {}
         self.ui_ok = True
         Window.softinput_mode = "below_target"
         Window.bind(on_keyboard=self._on_key)
@@ -3024,6 +3068,8 @@ class ChatApp(MDApp):
             self.refresh_streaks()
         elif name == "me":
             self.refresh_me()
+        elif name == "settings":
+            self.open_settings()
 
     def open_search(self):
         self.go_tab("communities")
@@ -3263,6 +3309,7 @@ class ChatApp(MDApp):
             color=avatar_color(r.get("username") or name), meta=age_text(r.get("age_seconds")),
             title=r["title"], snippet=" ".join((r.get("snippet") or "").split()),
             votes=int(r.get("votes") or 0), replies=int(r.get("replies") or 0), voted=bool(r.get("voted")),
+            saved=str(tid) in self.saved_threads, saved_snapshot=dict(r),
             on_release=lambda x, t=tid: self.open_thread(t))
 
     def reply_card(self, r):
@@ -3287,6 +3334,22 @@ class ChatApp(MDApp):
             return
         self.feed_req += 1
         req, sort, joined_only = self.feed_req, self.feed_sort, bool(self.joined)
+
+        if sort == "saved":
+            rows = sorted(self.saved_threads.values(), key=lambda row: row.get("saved_at") or 0,
+                          reverse=True)
+            sig = ("saved", tuple(row.get("id") for row in rows))
+            self.feed_sig, self.feed_loaded = sig, True
+            box = self.root.ids.feed_list
+            box.clear_widgets()
+            if not rows:
+                box.add_widget(MDLabel(text="No saved threads yet. Tap the bookmark on any thread to keep it here.",
+                                       halign="center", theme_text_color="Hint", size_hint_y=None, height=dp(120)))
+                return
+            box.add_widget(self.section_header("SAVED THREADS · ONLY YOU CAN SEE THESE"))
+            for row in rows:
+                box.add_widget(self.thread_card(row))
+            return
 
         def done(rows):
             if req != self.feed_req:
@@ -3317,9 +3380,68 @@ class ChatApp(MDApp):
         self.bg(lambda: self.api.threads(sort=sort, joined_only=joined_only), done, fail)
 
     def set_sort(self, key):
+        if key not in ("new", "top", "saved"):
+            return
         self.feed_sort = key
         self.feed_sig = None
         self.refresh_feed()
+
+    def _persist_saved_threads(self):
+        if not self.api.uid:
+            return
+        self.store.put("saved_threads_" + self.api.uid, items=list(self.saved_threads.values()))
+
+    def toggle_saved_thread(self, card):
+        tid = str(int(card.tid))
+        if tid in self.saved_threads:
+            self.saved_threads.pop(tid, None)
+            card.saved = False
+            self.notify("Removed from saved threads.")
+        else:
+            snapshot = dict(card.saved_snapshot or {})
+            snapshot.setdefault("id", int(tid))
+            snapshot.setdefault("community_id", int(card.community_id))
+            snapshot.setdefault("community_name", card.community)
+            snapshot.setdefault("author", card.author_id)
+            snapshot.setdefault("username", card.name)
+            snapshot.setdefault("display_name", card.name)
+            snapshot.setdefault("title", card.title)
+            snapshot.setdefault("snippet", card.snippet)
+            snapshot.setdefault("age_seconds", 0)
+            snapshot.setdefault("votes", int(card.votes))
+            snapshot.setdefault("replies", int(card.replies))
+            snapshot.setdefault("voted", bool(card.voted))
+            snapshot["saved_at"] = time.time()
+            self.saved_threads[tid] = snapshot
+            card.saved = True
+            self.notify("Saved for later.")
+        self._persist_saved_threads()
+        self.feed_sig = None
+        if self.feed_sort == "saved":
+            self.refresh_feed()
+
+    def toggle_thread_saved(self):
+        tid = str(int(self.thread_id))
+        if tid in self.saved_threads:
+            self.saved_threads.pop(tid, None)
+            self.thread_saved = False
+            self.notify("Removed from saved threads.")
+        else:
+            self.saved_threads[tid] = {
+                "id": int(self.thread_id), "community_id": int(self.thread_comm_id),
+                "community_name": self.thread_community, "author": self.thread_author_id,
+                "username": self.thread_name, "display_name": self.thread_name,
+                "title": self.thread_title, "snippet": short(self.thread_body, 240),
+                "body": self.thread_body, "age_seconds": 0, "votes": int(self.thread_votes),
+                "replies": int(self.thread_replies), "voted": bool(self.thread_voted),
+                "saved_at": time.time(),
+            }
+            self.thread_saved = True
+            self.notify("Saved for later.")
+        self._persist_saved_threads()
+        self.feed_sig = None
+        if self.feed_sort == "saved":
+            self.refresh_feed()
 
     def vote_thread_card(self, card):
         self.flip_vote(card, lambda: self.api.toggle_thread_vote(int(card.tid)))
@@ -3351,6 +3473,7 @@ class ChatApp(MDApp):
         self.thread_title = self.thread_body = self.thread_meta = self.thread_community = ""
         self.thread_replies = self.thread_votes = 0
         self.thread_voted = self.thread_can_delete = False
+        self.thread_saved = str(int(tid)) in self.saved_threads
         self.root.ids.reply_list.clear_widgets()
         self.root.ids.reply_input.text = ""
         self.root.current = "thread"
@@ -3367,6 +3490,9 @@ class ChatApp(MDApp):
             if int(self.thread_id) != tid:
                 return
             if not t:
+                self.saved_threads.pop(str(tid), None)
+                self._persist_saved_threads()
+                self.thread_saved = False
                 self.notify("This thread no longer exists.")
                 self.close_thread()
                 return
@@ -3380,6 +3506,7 @@ class ChatApp(MDApp):
             self.thread_meta = age_text(t.get("age_seconds"))
             self.thread_votes, self.thread_voted = int(t.get("votes") or 0), bool(t.get("voted"))
             self.thread_replies, self.thread_can_delete = int(t.get("replies") or 0), bool(t.get("can_delete"))
+            self.thread_saved = str(tid) in self.saved_threads
             box = self.root.ids.reply_list
             box.clear_widgets()
             for r in replies:
@@ -3419,19 +3546,22 @@ class ChatApp(MDApp):
     def send_reply(self):
         field = self.root.ids.reply_input
         text = field.text.strip()
-        if not text or not self.thread_id:
+        if not text or not self.thread_id or self.reply_sending:
             return
         tid = int(self.thread_id)
+        self.reply_sending = True
         field.text = ""
         Clock.schedule_once(lambda dt: setattr(field, "focus", True), 0.05)
 
         def done(_):
+            self.reply_sending = False
             if int(self.thread_id) == tid:
                 self.load_thread()
                 Clock.schedule_once(lambda dt: setattr(self.root.ids.thread_scroll, "scroll_y", 0), 0.4)
 
         def fail(e):
-            if not field.text:
+            self.reply_sending = False
+            if int(self.thread_id) == tid and self.root.current == "thread" and not field.text:
                 field.text = text
             self.forum_fail(e)
 
@@ -3444,6 +3574,8 @@ class ChatApp(MDApp):
         tid = int(self.thread_id)
 
         def done(_):
+            self.saved_threads.pop(str(tid), None)
+            self._persist_saved_threads()
             self.feed_sig = None
             self.close_thread()
 
@@ -3712,6 +3844,12 @@ class ChatApp(MDApp):
         self.me_username = self.api.username
         self.me_name = self.api.username
         self.root.ids.pass_field.text = ""
+        saved_key = "saved_threads_" + self.api.uid
+        self.saved_threads = {}
+        if self.store.exists(saved_key):
+            items = self.store.get(saved_key).get("items", [])
+            self.saved_threads = {str(row["id"]): row for row in items
+                                  if isinstance(row, dict) and row.get("id") is not None}
 
         self.local = LocalDB(os.path.join(self.user_data_dir, f"chat_{self.api.uid}.db"))
         local = self.local
@@ -3982,8 +4120,11 @@ class ChatApp(MDApp):
         self.convos, self.communities, self.joined, self.forum_ready = {}, [], set(), False
         self.feed_sig = None
         self.feed_loaded = False
+        self.feed_sort = "new"
         self.peer, self.last_id = None, 0
         self.me, self.me_name, self.peer_status, self.peer_active = {}, "", "", False
+        self.saved_threads = {}
+        self.sending_message = self.reply_sending = False
         self.root.ids.contact_list.clear_widgets()
         self.root.current = "login"
 
@@ -4204,8 +4345,20 @@ class ChatApp(MDApp):
     def set_show_active(self, flag):
         if self._profile_loading or not self.api.uid:
             return
+        previous = self.me.get("show_active") is not False
         self.me["show_active"] = bool(flag)
-        self.bg(lambda: self.api.set_show_active(flag), None, self.show_err)
+        def fail(e):
+            self.me["show_active"] = previous
+            self._profile_loading = True
+            self.root.ids.active_row.active = previous
+            self._profile_loading = False
+            self.show_err(e)
+
+        self.bg(lambda: self.api.set_show_active(flag), None, fail)
+
+    def limit_text(self, widget, limit):
+        if len(widget.text) > limit:
+            widget.text = widget.text[:limit]
 
     def rebuild_chat(self):
         sv, box = self.root.ids.scroll, self.root.ids.msg_list
@@ -4233,8 +4386,12 @@ class ChatApp(MDApp):
     def send(self):
         field = self.root.ids.msg_field
         text, peer = field.text.strip(), self.peer
-        if not text or not peer:
+        if not text or not peer or self.sending_message:
             return
+        if len(text) > 2000:
+            self.notify("Messages can be up to 2,000 characters.")
+            return
+        self.sending_message = True
         field.text = ""
         Clock.schedule_once(lambda dt: setattr(field, "focus", True), 0.05)
 
@@ -4247,6 +4404,7 @@ class ChatApp(MDApp):
             return m
 
         def done(m):
+            self.sending_message = False
             self.seen.add(m["id"])
             self.convos[peer] = {"id": m["id"], "sender": m["sender"], "text": m["text"]}
             self.msgs.setdefault(peer, []).append(m)
@@ -4254,7 +4412,8 @@ class ChatApp(MDApp):
                 self.add_bubble(m)
 
         def fail(e):
-            if not field.text:
+            self.sending_message = False
+            if self.peer == peer and self.root.current == "chat" and not field.text:
                 field.text = text
             self.show_err(e)
 
